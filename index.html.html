@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>شاهين إكسبريس | النسخة الكاملة 🦅</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-firestore-compat.js"></script>
     <style>
         :root { --gold: #d4af37; --purple: #1a051a; --glass: rgba(30, 10, 30, 0.95); }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; transition: 0.3s; }
@@ -145,7 +148,7 @@
             <div style="margin-top:10px;"><b>الجوال:</b> <span id="my-phone">--</span></div>
             <div style="margin-top:10px;"><b>العنوان:</b> <span style="color:var(--gold)">حي الصقور - الرياض</span></div>
         </div>
-        <button class="btn-gold" style="background:#e74c3c; color:white; margin-top:auto;" onclick="location.reload()">خروج</button>
+        <button class="btn-gold" style="background:#e74c3c; color:white; margin-top:auto;" onclick="logout()">خروج</button>
     </div>
 
     <div id="tab-bar" class="tab-bar">
@@ -157,6 +160,21 @@
 </div>
 
 <script>
+    // --- إعدادات Firebase الخاصة بك ---
+    const firebaseConfig = {
+        apiKey: "AIzaSyATT9rGsphiw9XjGW-BaE_aVg0O6bGYi14",
+        authDomain: "shahen-f31c2.firebaseapp.com",
+        databaseURL: "https://shahen-f31c2-default-rtdb.firebaseio.com",
+        projectId: "shahen-f31c2",
+        storageBucket: "shahen-f31c2.firebasestorage.app",
+        messagingSenderId: "531429638214",
+        appId: "1:531429638214:web:11376d90b1d66c37f14a47",
+        measurementId: "G-7V7ELSLC30"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
     const data = [];
     let cart = [], currentResId = null, orderHistory = [], cancelInterval = null, isLoginMode = true;
 
@@ -178,33 +196,62 @@
         document.getElementById('auth-btn').setAttribute('onclick', isLoginMode ? 'loginUser()' : 'registerUser()');
     }
 
-    function registerUser() {
+    async function registerUser() {
         const n = document.getElementById('uName').value;
         const e = document.getElementById('uEmail').value;
         const p = document.getElementById('uPass').value;
         const ph = document.getElementById('uPhone').value;
         if(!n || !e || !p || !ph) return showNotify("يرجى إكمال كافة الحقول يا صقر", "error");
-        
-        // محاكاة إرسال البيانات لقاعدة البيانات وإرسال إيميل التفعيل
-        console.log("Saving to Database:", { name: n, email: e, pass: p, phone: ph, status: "pending_verification" });
-        
-        document.getElementById('login-form-ui').style.display = 'none';
-        document.getElementById('verify-text').innerText = `يا صقر ${n}، أرسلنا رابط التفعيل إلى ${e}. اضغط عليه لتفعيل حسابك ورقمك ${ph}.`;
-        document.getElementById('verify-wait-ui').style.display = 'block';
-        showNotify("تم إرسال رابط التفعيل بنجاح 📧");
+        try {
+            await auth.signOut();
+            const res = await auth.createUserWithEmailAndPassword(e, p);
+            await res.user.sendEmailVerification();
+            await db.collection("users").doc(res.user.uid).set({ name: n, phone: ph, email: e });
+            await auth.signOut();
+            document.getElementById('login-form-ui').style.display = 'none';
+            document.getElementById('verify-wait-ui').style.display = 'block';
+            showNotify("تم إرسال رابط التفعيل بنجاح 📧");
+        } catch (err) {
+            if(err.code === 'auth/email-already-in-use') {
+                showNotify("هذا الإيميل مسجل مسبقاً! جرب تسجيل الدخول.", "error");
+            } else {
+                showNotify(err.message, "error");
+            }
+        }
     }
 
-    function loginUser() {
+    async function loginUser() {
         const e = document.getElementById('uEmail').value;
         const p = document.getElementById('uPass').value;
         if(!e || !p) return showNotify("يرجى إدخال البريد وكلمة السر", "error");
-        
-        // محاكاة البحث في قاعدة البيانات والتحقق من صحة البيانات
-        document.getElementById('login-form-ui').style.display = 'none';
-        document.getElementById('verify-text').innerText = `أهلاً بك مجدداً. تم إرسال رابط دخول آمن إلى ${e}. يرجى الضغط عليه للدخول.`;
-        document.getElementById('verify-wait-ui').style.display = 'block';
-        showNotify("تم إرسال رابط الدخول للإيميل 📧");
+        try {
+            const res = await auth.signInWithEmailAndPassword(e, p);
+            await res.user.reload();
+            if (res.user.emailVerified) {
+                loadUserData(res.user.uid);
+            } else {
+                showNotify("فعل حسابك من الإيميل أولاً", "error");
+                await auth.signOut();
+            }
+        } catch (err) { showNotify("بيانات غير صحيحة", "error"); }
     }
+
+    function loadUserData(uid) {
+        db.collection("users").doc(uid).get().then(doc => {
+            if (doc.exists) {
+                document.getElementById('my-name').innerText = doc.data().name;
+                document.getElementById('my-phone').innerText = doc.data().phone;
+                document.getElementById('p-login').style.display = 'none';
+                document.getElementById('tab-bar').style.display = 'flex';
+                renderRes();
+                nav('p-home');
+            }
+        });
+    }
+
+    auth.onAuthStateChanged(user => { if (user && user.emailVerified) loadUserData(user.uid); });
+
+    function logout() { auth.signOut(); location.reload(); }
 
     function login(t) {
         if(t !== 'dev') {
