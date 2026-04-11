@@ -3,260 +3,364 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>شاهين إكسبريس | النسخة الكاملة الآلية</title>
+    <title>شاهين إكسبريس | النسخة الكاملة 🦅</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root { --gold: #d4af37; --bg: #1a051a; --glass: rgba(30, 10, 30, 0.95); --text: #fff; }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        body, html { margin: 0; padding: 0; height: 100vh; background: var(--bg); color: var(--text); font-family: -apple-system, sans-serif; overflow: hidden; }
-        .royal-bg-shadow { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 320px; height: 320px; background: url('https://i.postimg.cc/3RmMjYNd/Whats-App-Image-2026-04-10-at-6-22-30-PM.jpg') no-repeat center/contain; opacity: 0.1; pointer-events: none; z-index: 0; }
-        #apple-notify { position: fixed; top: -100px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; background: rgba(0,0,0,0.9); border: 1px solid var(--gold); color: var(--gold); padding: 15px; border-radius: 20px; z-index: 10000; text-align: center; font-weight: bold; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
-        #apple-notify.show { top: 20px; }
-        #eagle-takeoff { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 9999; display: none; align-items: center; justify-content: center; flex-direction: column; }
-        .eagle-animate { color: var(--gold); font-size: 80px; animation: eagleFly 2s ease-in-out forwards; }
-        @keyframes eagleFly { 0% { transform: scale(0.5); opacity: 0; } 50% { transform: scale(1.2); opacity: 1; } 100% { transform: translateY(-100vh) scale(1.5); opacity: 0; } }
-        .app-shell { width: 100%; max-width: 500px; height: 100%; margin: auto; position: relative; display: flex; flex-direction: column; border-left: 1px solid rgba(212,175,55,0.1); border-right: 1px solid rgba(212,175,55,0.1); }
-        .page { display: none; padding: 0 25px 25px; flex-direction: column; flex-grow: 1; overflow-y: auto; z-index: 20; }
-        .page.active { display: flex; animation: appleFade 0.5s ease; }
-        @keyframes appleFade { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; } }
-        .card { background: var(--glass); border-radius: 25px; padding: 18px; margin-bottom: 15px; display: flex; align-items: center; border: 1px solid rgba(255,255,255,0.03); }
-        .card img { width: 65px; height: 65px; border-radius: 16px; object-fit: cover; margin-left: 18px; border: 1px solid var(--gold); }
-        .btn-gold { background: var(--gold); color: #000; border: none; padding: 18px; border-radius: 18px; font-weight: bold; width: 100%; cursor: pointer; }
-        .tab-bar { height: 90px; background: #000; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid rgba(212,175,55,0.1); }
-        .tab-item { color: #555; text-align: center; cursor: pointer; font-size: 12px; }
+        :root { --gold: #d4af37; --purple: #1a051a; --glass: rgba(30, 10, 30, 0.95); }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; transition: 0.3s; }
+        body, html { margin: 0; padding: 0; height: 100vh; background: #000; color: #fff; font-family: -apple-system, sans-serif; overflow: hidden; display: flex; justify-content: center; align-items: center; }
+        
+        /* ظل الشعار الملكي الواضح في وسط الصفحة البنفسجية */
+        .royal-bg-shadow { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 380px; height: 380px; background: url('https://i.postimg.cc/3RmMjYNd/Whats-App-Image-2026-04-10-at-6-22-30-PM.jpg') no-repeat center/contain; opacity: 0.15; pointer-events: none; z-index: 0; filter: grayscale(100%) brightness(0.6); }
+        
+        /* إطار التطبيق */
+        .app-shell { width: 375px; height: 812px; max-height: 95vh; background: var(--purple); border: 2px solid rgba(212,175,55,0.3); border-radius: 40px; position: relative; display: flex; flex-direction: column; overflow: hidden; z-index: 10; box-shadow: 0 20px 50px rgba(0,0,0,1); }
+        
+        /* نظام الإشعارات الداخلي الجديد */
+        #in-app-notify { position: absolute; top: -100px; left: 50%; transform: translateX(-50%); width: 90%; padding: 15px; border-radius: 20px; text-align: center; font-weight: bold; z-index: 9999; box-shadow: 0 10px 30px rgba(0,0,0,0.5); transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; align-items: center; justify-content: center; gap: 10px; }
+        #in-app-notify.show { top: 20px; }
+        .notify-success { background: var(--gold); color: #000; }
+        .notify-error { background: #e74c3c; color: #fff; }
+        .notify-info { background: #3498db; color: #fff; }
+
+        /* انيميشن صقر شاهين (مرسول ستايل) */
+        #eagle-searching { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--purple); z-index: 10000; display: none; align-items: center; justify-content: center; flex-direction: column; text-align: center; }
+        .eagle-fly { font-size: 80px; color: var(--gold); animation: fly 2s ease-in-out infinite; }
+        @keyframes fly { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-20px) scale(1.1); opacity: 0.7; } }
+        .pulse-text { color: var(--gold); margin-top: 20px; animation: pulse 1.5s infinite; font-weight: bold; }
+        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+
+        /* تعديل: انيميشن شعار الشاهين الكبير عند التأكيد */
+        #eagle-confirm { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--purple); z-index: 10001; display: none; align-items: center; justify-content: center; flex-direction: column; text-align: center; }
+        .confirm-logo { width: 200px; border-radius: 50%; border: 4px solid var(--gold); animation: scaleUp 0.5s ease-out; }
+        @keyframes scaleUp { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        .page { display: none; padding: 20px; flex-grow: 1; overflow-y: auto; padding-bottom: 100px; scrollbar-width: none; }
+        .page.active { display: flex; flex-direction: column; animation: fadeIn 0.4s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; } }
+
+        .card { background: var(--glass); border-radius: 20px; padding: 15px; margin-bottom: 12px; border: 1px solid rgba(212, 175, 55, 0.1); }
+        .btn-gold { background: var(--gold); color: #000; border: none; padding: 16px; border-radius: 15px; font-weight: bold; width: 100%; cursor: pointer; }
+        
+        /* الملاحة السفلي */
+        .tab-bar { height: 80px; background: #000; display: none; justify-content: space-around; align-items: center; border-top: 1px solid rgba(212,175,55,0.1); position: absolute; bottom: 0; width: 100%; }
+        .tab-item { color: #555; text-align: center; flex: 1; font-size: 11px; position: relative; }
         .tab-item.active { color: var(--gold); }
-        .tab-item i { font-size: 20px; display: block; margin-bottom: 5px; }
-        .loader { width: 20px; height: 20px; border: 3px solid var(--gold); border-bottom-color: transparent; border-radius: 50%; display: inline-block; animation: rotation 1s linear infinite; }
-        @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .tab-item i { font-size: 20px; display: block; margin-bottom: 4px; }
+        .badge { position: absolute; top: -5px; right: 25%; background: #e74c3c; color: #fff; border-radius: 50%; padding: 2px 6px; font-size: 10px; display: none; }
+
+        input { background: #000; border: 1px solid #333; color: #fff; padding: 14px; border-radius: 12px; width: 100%; margin-bottom: 10px; outline: none; }
+        .flex-reverse { display: flex; flex-direction: row-reverse; align-items: center; justify-content: space-between; }
+        
+        /* الدردشة */
+        .chat-msg { padding: 10px 15px; border-radius: 15px; margin: 5px 0; max-width: 80%; font-size: 14px; }
+        .chat-in { background: #333; align-self: flex-start; }
+        .chat-out { background: var(--gold); color: #000; align-self: flex-end; }
     </style>
 </head>
 <body>
 
 <div class="royal-bg-shadow"></div>
-<div id="apple-notify"><i class="fas fa-bell"></i> <span id="notify-msg"></span></div>
-
-<div id="eagle-takeoff"><div class="eagle-animate"><i class="fas fa-dove"></i></div><h2 style="color:var(--gold)">طلبك انطلق مع الصقور...</h2></div>
 
 <div class="app-shell">
+    <div id="in-app-notify"><i id="notify-icon"></i> <span id="notify-msg"></span></div>
+
+    <div id="eagle-confirm">
+        <img src="https://i.postimg.cc/3RmMjYNd/Whats-App-Image-2026-04-10-at-6-22-30-PM.jpg" class="confirm-logo">
+        <h1 style="color:var(--gold); margin-top:20px;">نوفي بعهدكم</h1>
+    </div>
+
+    <div id="eagle-searching">
+        <div class="eagle-fly"><i class="fas fa-dove"></i></div>
+        <div class="pulse-text" id="searching-text">جاري البحث عن صقور الشاهين...</div>
+        <button id="cancel-btn" class="btn-gold" style="width: 80%; margin-top: 30px; background: #e74c3c; color: #fff;" onclick="cancelOrder()">إلغاء الطلب (<span id="cancel-timer">15</span>)</button>
+        <small style="color: rgba(212,175,55,0.5); margin-top: 10px;">نوفي بعهدكم</small>
+    </div>
+
     <div id="p-login" class="page active" style="justify-content:center; text-align:center;">
-        <img src="https://i.postimg.cc/3RmMjYNd/Whats-App-Image-2026-04-10-at-6-22-30-PM.jpg" width="120" style="border-radius:30px; margin-bottom:20px; border:2px solid var(--gold);">
-        <div id="login-fields">
-            <h2>صقور شاهين 🦅</h2>
-            <input type="text" id="uName" style="width:100%; padding:18px; background:#000; border:1px solid #333; border-radius:15px; color:#fff; text-align:center; margin-bottom:10px;" placeholder="الاسم الكامل">
-            <input type="tel" id="uPhone" style="width:100%; padding:18px; background:#000; border:1px solid #333; border-radius:15px; color:#fff; text-align:center; margin-bottom:15px;" placeholder="رقم الجوال (09xx / 05xx)">
-            <button class="btn-gold" onclick="startAutoVerify()">دخول تلقائي عبر التيليجرام</button>
+        <div style="display: flex; justify-content: center; width: 100%; margin-bottom: 30px;">
+            <img src="https://i.postimg.cc/3RmMjYNd/Whats-App-Image-2026-04-10-at-6-22-30-PM.jpg" width="130" style="border-radius:35px; border:3px solid var(--gold);">
         </div>
-        <div id="verify-wait" style="display:none">
-            <h2 style="color:var(--gold)" class="pulse">بانتظار تفعيل البوت...</h2>
-            <p>افتح البوت واضغط Start فقط</p>
-            <button class="btn-gold" style="background:#2481cc; color:#fff; margin-bottom:20px;" onclick="window.open('https://t.me/ShaheenExpressBot', '_blank')">افتح البوت الآن</button>
-            <div class="loader"></div>
+        <div id="login-form-ui">
+            <h2 style="color:var(--gold)" id="auth-title">تسجيل دخول صقر 🦅</h2>
+            <div id="register-fields" style="display: none;">
+                <input type="text" id="uName" placeholder="الاسم الكامل">
+                <input type="tel" id="uPhone" placeholder="رقم الجوال">
+            </div>
+            <input type="email" id="uEmail" placeholder="البريد الإلكتروني">
+            <input type="password" id="uPass" placeholder="كلمة السر">
+            <button class="btn-gold" id="auth-btn" onclick="loginUser()">دخول وإرسال رابط التفعيل</button>
+            <p style="margin-top:20px; font-size:13px; cursor:pointer; color:var(--gold);" onclick="toggleAuthMode()" id="toggle-text">ليس لديك حساب؟ إنشاء حساب</p>
         </div>
-        <div id="verify-code" style="display:none">
-            <h2>أدخل الكود المستلم</h2>
-            <input type="number" id="vInput" style="width:100%; padding:18px; background:#000; border:1px solid var(--gold); border-radius:15px; color:#fff; text-align:center; margin-bottom:15px;" placeholder="0 0 0 0">
-            <button class="btn-gold" onclick="finalVerify()">تأكيد الدخول ✅</button>
+        <div id="verify-wait-ui" style="display:none;">
+            <i class="fas fa-envelope-open-text fa-4x" style="color:var(--gold); margin-bottom:20px;"></i>
+            <h2 style="color:var(--gold)">تحقق من بريدك!</h2>
+            <p style="font-size:14px; line-height:1.6;">أرسلنا رابط التحقق إلى إيميلك.<br>اضغط على الرابط لتفعيل الدخول والموقع.</p>
+            <button class="btn-gold" style="margin-top:20px; background:transparent; border:1px solid var(--gold); color:var(--gold);" onclick="location.reload()">العودة للرئيسية</button>
         </div>
     </div>
 
-    <div id="apple-ui" style="display:none">
-        <div style="padding:45px 25px 15px; text-align:right;"><h1>اكتشف</h1></div>
-        <div style="padding:0 25px 20px;"><div style="background:rgba(255,255,255,0.06); border-radius:16px; padding:14px; display:flex; align-items:center; gap:10px; border:1px solid rgba(212,175,55,0.25);"><i class="fas fa-search" style="color:#555"></i><input type="text" id="g-search" style="background:none; border:none; color:#fff; width:100%; outline:none;" placeholder="ابحث عن مطعم أو صيدلية..." onkeyup="renderPlaces()"></div></div>
+    <div id="p-home" class="page">
+        <h2 style="color:var(--gold)">اكتشف المطاعم 🍔</h2>
+        <input type="text" id="resSearch" placeholder="🔍 ابحث عن مطعم..." onkeyup="searchRes()">
+        <div id="res-list"></div>
     </div>
 
-    <div id="p-home" class="page"><div id="res-list"></div></div>
-    
     <div id="p-menu" class="page">
-        <div style="display:flex; align-items:center; gap:12px; margin: 25px 0;"><i class="fas fa-chevron-right" onclick="nav('p-home')" style="color:var(--gold); font-size:26px; cursor:pointer;"></i><h2 id="menu-title" style="margin:0;"></h2></div>
-        <div id="items-list"></div>
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+            <i class="fas fa-chevron-right" onclick="nav('p-home')" style="color:var(--gold); font-size:20px;"></i>
+            <h2 id="menu-title" style="color:var(--gold); margin:0;">قائمة الطعام</h2>
+        </div>
+        <input type="text" id="menuSearch" placeholder="🔍 ابحث في المنيو..." onkeyup="searchMenu()">
+        <div id="menu-items"></div>
     </div>
 
     <div id="p-cart" class="page">
-        <div style="padding:40px 0 20px;"><h1>السلة</h1></div>
-        <div id="cart-items"></div>
-        <div id="cart-summary"></div>
+        <h2 style="color:var(--gold)">سلة الصقور 🛒</h2>
+        <div id="cart-content"></div>
+        <div id="cart-summary" class="card" style="margin-top:auto; display:none; background:rgba(0,0,0,0.5);"></div>
+    </div>
+
+    <div id="p-chat" class="page">
+        <h2 style="color:var(--gold)">دردشة المندوب 🛵</h2>
+        <div id="chat-box" style="flex:1; display:flex; flex-direction:column; overflow-y:auto; padding:10px;">
+            <div class="chat-msg chat-in">أهلاً بك يا صقر، أنا مندوبك. تم قبول طلبك وجاري التنفيذ!</div>
+        </div>
+        <div style="display:flex; gap:10px; margin-top:10px;">
+            <input type="text" id="m-inp" placeholder="اكتب رسالة..." style="margin:0">
+            <button class="btn-gold" style="width:auto; padding:0 20px;" onclick="sendMsg()"><i class="fas fa-paper-plane"></i></button>
+        </div>
+        <button class="btn-gold" style="background:#2ecc71; color:#fff; margin-top:10px;" onclick="finishOrder()">تم الاستلام ✅</button>
     </div>
 
     <div id="p-history" class="page">
-        <div style="padding:40px 0 20px;"><h1>طلباتي 🦅</h1></div>
+        <h2 style="color:var(--gold)">طلباتي السابقة ⚡</h2>
         <div id="history-content"></div>
     </div>
 
-    <div id="tab-bar" class="tab-bar" style="display:none">
-        <div class="tab-item active" onclick="nav('p-home')"><i class="fas fa-compass"></i>اكتشف</div>
-        <div class="tab-item" onclick="nav('p-cart')"><i class="fas fa-shopping-basket"></i>السلة</div>
-        <div class="tab-item" onclick="nav('p-history')"><i class="fas fa-receipt"></i>طلباتي</div>
-        <div class="tab-item" onclick="logout()" style="color:#e74c3c"><i class="fas fa-power-off"></i>خروج</div>
+    <div id="p-profile" class="page">
+        <h2 style="color:var(--gold)">حسابي الشخصي 👤</h2>
+        <div class="card">
+            <div><b>الاسم:</b> <span id="my-name">--</span></div>
+            <div style="margin-top:10px;"><b>الجوال:</b> <span id="my-phone">--</span></div>
+            <div style="margin-top:10px;"><b>العنوان:</b> <span style="color:var(--gold)">حي الصقور - الرياض</span></div>
+        </div>
+        <button class="btn-gold" style="background:#e74c3c; color:white; margin-top:auto;" onclick="location.reload()">خروج</button>
+    </div>
+
+    <div id="tab-bar" class="tab-bar">
+        <div class="tab-item active" onclick="nav('p-home')"><i class="fas fa-home"></i>الرئيسية</div>
+        <div class="tab-item" onclick="nav('p-cart')"><i class="fas fa-shopping-basket"></i><span id="badge" class="badge">0</span>السلة</div>
+        <div class="tab-item" onclick="nav('p-history')"><i class="fas fa-bolt"></i>طلباتي</div>
+        <div class="tab-item" onclick="nav('p-profile')"><i class="fas fa-user"></i>حسابي</div>
     </div>
 </div>
 
 <script>
-    const BOT_TOKEN = "8789071536:AAFLDY5VoMbeDsVhv3kvmzQ1DwRxmRirwsA";
-    let user = null, cart = [], currentResId = null, generatedOTP = null, pollInterval = null;
+    const data = [];
+    let cart = [], currentResId = null, orderHistory = [], cancelInterval = null, isLoginMode = true;
 
-    function notify(msg) {
+    function showNotify(msg, type = 'success') {
+        const n = document.getElementById('in-app-notify');
+        const icon = document.getElementById('notify-icon');
         document.getElementById('notify-msg').innerText = msg;
-        const n = document.getElementById('apple-notify');
-        n.classList.add('show');
-        setTimeout(() => n.classList.remove('show'), 4000);
+        n.className = 'show notify-' + type;
+        icon.className = type === 'success' ? 'fas fa-check-circle' : (type === 'error' ? 'fas fa-exclamation-triangle' : 'fas fa-info-circle');
+        setTimeout(() => n.classList.remove('show'), 3000);
     }
 
-    // --- نظام التحقق الآلي ---
-    function startAutoVerify() {
+    function toggleAuthMode() {
+        isLoginMode = !isLoginMode;
+        document.getElementById('auth-title').innerText = isLoginMode ? "تسجيل دخول صقر 🦅" : "إنشاء حساب صقر 🦅";
+        document.getElementById('register-fields').style.display = isLoginMode ? "none" : "block";
+        document.getElementById('auth-btn').innerText = isLoginMode ? "دخول وإرسال رابط التفعيل" : "تسجيل وإرسال رابط التحقق";
+        document.getElementById('toggle-text').innerText = isLoginMode ? "ليس لديك حساب؟ إنشاء حساب" : "لديك حساب بالفعل؟ تسجيل دخول";
+        document.getElementById('auth-btn').setAttribute('onclick', isLoginMode ? 'loginUser()' : 'registerUser()');
+    }
+
+    function registerUser() {
         const n = document.getElementById('uName').value;
-        const p = document.getElementById('uPhone').value;
-        if(n && (p.startsWith('09') || p.startsWith('05'))) {
-            user = { name: n, phone: p };
-            generatedOTP = Math.floor(1000 + Math.random() * 8999).toString();
-            document.getElementById('login-fields').style.display = 'none';
-            document.getElementById('verify-wait').style.display = 'block';
-            window.open('https://t.me/ShaheenExpressBot', '_blank');
-            
-            pollInterval = setInterval(async () => {
-                try {
-                    const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?offset=-1`);
-                    const data = await res.json();
-                    if (data.result.length > 0 && data.result[0].message.text === "/start") {
-                        clearInterval(pollInterval);
-                        sendOTP(data.result[0].message.chat.id);
-                    }
-                } catch(e) {}
-            }, 2000);
-        } else { notify("أدخل اسمك ورقم سوري أو سعودي صحيح"); }
+        const e = document.getElementById('uEmail').value;
+        const p = document.getElementById('uPass').value;
+        const ph = document.getElementById('uPhone').value;
+        if(!n || !e || !p || !ph) return showNotify("يرجى إكمال كافة الحقول يا صقر", "error");
+        console.log("Saving to DB:", { name: n, email: e, pass: p, phone: ph });
+        document.getElementById('login-form-ui').style.display = 'none';
+        document.getElementById('verify-wait-ui').style.display = 'block';
+        showNotify("تم إرسال رابط التفعيل بنجاح 📧");
     }
 
-    async function sendOTP(chatId) {
-        await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ chat_id: chatId, text: `مرحباً ${user.name} 🦅\nكود التحقق هو: ${generatedOTP}` })
-        });
-        document.getElementById('verify-wait').style.display = 'none';
-        document.getElementById('verify-code').style.display = 'block';
-        notify("شيك على التيليجرام وصلك الكود!");
+    function loginUser() {
+        const e = document.getElementById('uEmail').value;
+        const p = document.getElementById('uPass').value;
+        if(!e || !p) return showNotify("يرجى إدخال البريد وكلمة السر", "error");
+        document.getElementById('login-form-ui').style.display = 'none';
+        document.getElementById('verify-wait-ui').style.display = 'block';
+        showNotify("تم إرسال رابط الدخول للإيميل 📧");
     }
 
-    function finalVerify() {
-        if(document.getElementById('vInput').value === generatedOTP) {
-            localStorage.setItem('sh_user', JSON.stringify(user));
-            location.reload();
-        } else { notify("الكود غلط يا صقر!"); }
+    function login(t) {
+        if(t !== 'dev') {
+            const n = document.getElementById('uName').value;
+            const ph = document.getElementById('uPhone').value;
+            if(!n || !ph) return showNotify("أدخل بياناتك يا صقر", "error");
+            document.getElementById('my-name').innerText = n;
+            document.getElementById('my-phone').innerText = ph;
+        }
+        document.getElementById('p-login').style.display = 'none';
+        document.getElementById('tab-bar').style.display = 'flex';
+        renderRes(); nav('p-home');
     }
 
-    // --- نظام المطاعم ---
-    function renderPlaces() {
-        const query = document.getElementById('g-search').value.toLowerCase();
-        const res = JSON.parse(localStorage.getItem('sh_res'));
-        const filtered = res.filter(r => r.name.toLowerCase().includes(query));
-        document.getElementById('res-list').innerHTML = filtered.map(r => `
-            <div class="card" onclick="openMenu(${r.id})">
-                <img src="${r.image}">
-                <div style="flex:1;"><b>${r.name}</b><br><small style="color:var(--gold)">${r.cat}</small></div>
-                <i class="fas fa-chevron-left" style="opacity:0.3"></i>
+    function renderRes() {
+        if (data.length === 0) {
+            document.getElementById('res-list').innerHTML = "<p style='text-align:center; opacity:0.5; margin-top:20px;'>جاري تحميل المطاعم...</p>";
+            return;
+        }
+        document.getElementById('res-list').innerHTML = data.map(r => `
+            <div class="card res-card" onclick="openMenu(${r.id})">
+                <div class="flex-reverse">
+                    <img src="${r.img}" width="65" height="65" style="border-radius:12px; border:1px solid var(--gold);">
+                    <div style="flex:1; text-align:right; margin-right:15px;"><b class="res-name">${r.name}</b><br><small style="color:var(--gold)">توصيل: ${r.fee} ل.س • ${r.time}</small></div>
+                </div>
             </div>
         `).join('');
     }
 
     function openMenu(id) {
-        const res = JSON.parse(localStorage.getItem('sh_res')).find(r => r.id == id);
+        const res = data.find(r => r.id === id);
         document.getElementById('menu-title').innerText = res.name;
-        document.getElementById('items-list').innerHTML = res.menu.map(m => `
-            <div class="card">
-                <div style="flex:1;"><b>${m.name}</b><br><small>${m.price.toLocaleString()} ل.س</small></div>
-                <button class="btn-gold" style="width:auto; padding:8px 15px;" onclick="addToCart('${res.id}','${res.name}','${m.name}',${m.price})">أضف</button>
-            </div>
+        document.getElementById('menu-items').innerHTML = res.menu.map(m => `
+            <div class="card menu-card"><div class="flex-reverse">
+                <img src="${m.img}" width="60" height="60" style="border-radius:10px; margin-right:10px; border:1px solid rgba(212,175,55,0.3);">
+                <div style="text-align:right; flex:1;"><b class="item-name">${m.n}</b><br><b style="color:var(--gold)">${m.p} ل.س</b></div>
+                <i class="fas fa-plus-circle" style="color:var(--gold); font-size:24px;" onclick="addToCart(${res.id},'${m.n}',${m.p},'${m.img}')"></i>
+            </div></div>
         `).join('');
         nav('p-menu');
     }
 
-    function addToCart(rid, rname, name, price) {
-        if(currentResId && currentResId !== rid) { notify("لا يمكن الطلب من مكانين مختلفين!"); return; }
-        currentResId = rid;
-        const item = cart.find(i => i.name === name);
-        if(item) item.qty++; else cart.push({rname, name, price, qty:1});
-        notify("تمت الإضافة للسلة ✅");
-    }
-
-    function renderCart() {
-        const container = document.getElementById('cart-items');
-        if(cart.length === 0) { container.innerHTML = "<p style='text-align:center; opacity:0.5;'>سلتك فارغة</p>"; document.getElementById('cart-summary').innerHTML = ""; return; }
-        container.innerHTML = cart.map((i,idx) => `
-            <div class="card">
-                <div style="flex:1;"><b>${i.name}</b><br><small>${(i.price * i.qty).toLocaleString()} ل.س</small></div>
-                <div style="display:flex; gap:15px; align-items:center;">
-                    <i class="fas fa-minus-circle" onclick="changeQty(${idx},-1)"></i>
-                    <b>${i.qty}</b>
-                    <i class="fas fa-plus-circle" onclick="changeQty(${idx},1)"></i>
-                </div>
-            </div>
-        `).join('');
-        const total = cart.reduce((s,i) => s + (i.price*i.qty), 0) + 10000;
-        document.getElementById('cart-summary').innerHTML = `
-            <div class="card" style="flex-direction:column; align-items:stretch;">
-                <div style="display:flex; justify-content:space-between;"><span>التوصيل:</span><span>10,000 ل.س</span></div>
-                <div style="display:flex; justify-content:space-between; margin-top:10px; font-weight:bold; color:var(--gold);"><span>الإجمالي:</span><span>${total.toLocaleString()} ل.س</span></div>
-            </div>
-            <button class="btn-gold" onclick="checkout()">تأكيد الطلب 🦅</button>
-        `;
-    }
-
-    function changeQty(idx, d) {
-        cart[idx].qty += d;
-        if(cart[idx].qty <= 0) cart.splice(idx,1);
-        if(cart.length === 0) currentResId = null;
-        renderCart();
-    }
-
-    function checkout() {
-        document.getElementById('eagle-takeoff').style.display = 'flex';
-        const order = { id: Date.now(), res: cart[0].rname, total: cart.reduce((s,i)=>s+(i.price*i.qty),0)+10000, status: 'قيد التنفيذ 🦅' };
-        let history = JSON.parse(localStorage.getItem('sh_orders')) || [];
-        history.unshift(order);
-        localStorage.setItem('sh_orders', JSON.stringify(history));
-        setTimeout(() => { 
-            cart = []; currentResId = null;
-            document.getElementById('eagle-takeoff').style.display = 'none'; 
-            nav('p-history'); 
-        }, 2000);
-    }
-
-    function renderHistory() {
-        const orders = JSON.parse(localStorage.getItem('sh_orders')) || [];
-        document.getElementById('history-content').innerHTML = orders.map(o => `
-            <div class="card">
-                <div style="flex:1;"><b>${o.res}</b><br><small>${o.total.toLocaleString()} ل.س</small></div>
-                <div style="color:var(--gold)">${o.status}</div>
-            </div>
-        `).join('');
+    function addToCart(rid, n, p, img) {
+        if(currentResId && currentResId !== rid) return showNotify("❌ ممنوع الطلب من مطعمين مختلفين!", "error");
+        currentResId = rid; cart.push({n, p, img});
+        document.getElementById('badge').innerText = cart.length;
+        document.getElementById('badge').style.display = 'block';
+        showNotify("تمت إضافة " + n + " إلى السلة ✅");
     }
 
     function nav(id) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.getElementById(id).classList.add('active');
-        document.getElementById('apple-ui').style.display = (id === 'p-home') ? 'block' : 'none';
-        document.querySelectorAll('.tab-item').forEach((t,i) => {
-            t.classList.remove('active');
-            if((id==='p-home'&&i===0)||(id==='p-cart'&&i===1)||(id==='p-history'&&i===2)) t.classList.add('active');
-        });
-        if(id==='p-home') renderPlaces(); if(id==='p-cart') renderCart(); if(id==='p-history') renderHistory();
+        document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+        if(event && event.currentTarget && event.currentTarget.classList) event.currentTarget.classList.add('active');
+        if(id === 'p-cart') renderCart();
+        if(id === 'p-history') renderHistory();
     }
 
-    function logout() { localStorage.removeItem('sh_user'); location.reload(); }
+    function renderCart() {
+        const cont = document.getElementById('cart-content');
+        const sum = document.getElementById('cart-summary');
+        if(cart.length === 0) { cont.innerHTML = "<p style='text-align:center;'>سلتك فارغة</p>"; sum.style.display='none'; return; }
+        const res = data.find(r => r.id === currentResId);
+        cont.innerHTML = `
+            <div class="card" style="border-bottom: 2px dashed var(--gold); border-radius: 20px 20px 0 0;">
+                <div class="flex-reverse">
+                    <img src="${res.img}" width="50" height="50" style="border-radius:50%; border:1px solid var(--gold);">
+                    <div style="flex:1; text-align:right; margin-right:15px;"><b>${res.name}</b><br><small>الوقت المقدر: ${res.time}</small></div>
+                </div>
+            </div>
+        ` + cart.map(i => `
+            <div class="card" style="margin-top:5px; border-radius:10px;"><div class="flex-reverse">
+                <img src="${i.img}" width="40" height="40" style="border-radius:8px; margin-right:10px;">
+                <div style="flex:1; text-align:right;"><b>${i.n}</b><br><small style="color:var(--gold)">${i.p} ل.س</small></div>
+            </div></div>
+        `).join('');
+        const sub = cart.reduce((s,i) => s+i.p, 0);
+        sum.style.display = 'block';
+        sum.innerHTML = `
+            <div style="font-size:14px;">
+                <div style="display:flex; justify-content:space-between"><span>مجموع الوجبات:</span><span>${sub} ل.س</span></div>
+                <div style="display:flex; justify-content:space-between; margin:5px 0;"><span>رسوم التوصيل:</span><span>${res.fee} ل.س</span></div>
+                <hr style="border:0; border-top:1px solid #333;">
+                <div style="display:flex; justify-content:space-between; color:var(--gold); font-size:18px; font-weight:bold;"><span>الإجمالي:</span><span>${sub+res.fee} ل.س</span></div>
+            </div>
+            <button class="btn-gold" style="margin-top:15px" onclick="confirmOrderStart()">تأكيد الطلب 🦅</button>
+        `;
+    }
 
-    window.onload = () => {
-        if(!localStorage.getItem('sh_res')) {
-            localStorage.setItem('sh_res', JSON.stringify([
-                {id:1, name:"مطعم الملكي", cat:"مطعم", image:"https://i.postimg.cc/3RmMjYNd/Whats-App-Image-2026-04-10-at-6-22-30-PM.jpg", menu:[{name:"وجبة شاهين", price:45000},{name:"شاورما دبل", price:25000}]},
-                {id:2, name:"صيدلية الشفاء", cat:"صيدلية", image:"https://i.postimg.cc/3RmMjYNd/Whats-App-Image-2026-04-10-at-6-22-30-PM.jpg", menu:[{name:"بندول", price:5000},{name:"فيتامين C", price:12000}]}
-            ]));
-        }
-        if(localStorage.getItem('sh_user')) {
-            document.getElementById('p-login').classList.remove('active');
-            document.getElementById('apple-ui').style.display = 'block';
-            document.getElementById('tab-bar').style.display = 'flex';
-            nav('p-home');
-        }
-    };
+    function confirmOrderStart() {
+        document.getElementById('eagle-confirm').style.display = 'flex';
+        setTimeout(() => {
+            document.getElementById('eagle-confirm').style.display = 'none';
+            startSearching();
+        }, 2000);
+    }
+
+    function startSearching() {
+        document.getElementById('eagle-searching').style.display = 'flex';
+        let timeLeft = 15;
+        document.getElementById('cancel-timer').innerText = timeLeft;
+        document.getElementById('cancel-btn').style.display = 'block';
+        
+        cancelInterval = setInterval(() => {
+            timeLeft--;
+            document.getElementById('cancel-timer').innerText = timeLeft;
+            if (timeLeft <= 0) {
+                clearInterval(cancelInterval);
+                document.getElementById('cancel-btn').style.display = 'none';
+                document.getElementById('searching-text').innerText = "تم العثور على صقر! جاري التوصيل...";
+                setTimeout(() => {
+                    document.getElementById('eagle-searching').style.display = 'none';
+                    showNotify("🦅 نوفي بعهدكم.. تم قبول طلبك من الصقر أحمد!");
+                    nav('p-chat');
+                }, 2000);
+            }
+        }, 1000);
+    }
+
+    function cancelOrder() {
+        clearInterval(cancelInterval);
+        document.getElementById('eagle-searching').style.display = 'none';
+        showNotify("تم إلغاء الطلب بنجاح", "info");
+    }
+
+    function finishOrder() {
+        const res = data.find(r => r.id === currentResId);
+        const sub = cart.reduce((s,i) => s+i.p, 0);
+        orderHistory.unshift({ resName: res.name, total: sub + res.fee, date: new Date().toLocaleString('ar-SA') });
+        cart=[]; currentResId=null; document.getElementById('badge').style.display='none';
+        showNotify("تم توصيل الطلب بنجاح! نوفي بعهدكم 🦅");
+        nav('p-history');
+    }
+
+    function renderHistory() {
+        const cont = document.getElementById('history-content');
+        if(orderHistory.length === 0) { cont.innerHTML = "<p style='text-align:center;'>لا يوجد طلبات سابقة</p>"; return; }
+        cont.innerHTML = orderHistory.map(o => `
+            <div class="card" style="border-right: 4px solid var(--gold);">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div><b>${o.resName}</b><br><small>${o.date}</small></div>
+                    <b style="color:var(--gold)">${o.total} ل.س</b>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function sendMsg() { const i = document.getElementById('m-inp'); if(!i.value) return; document.getElementById('chat-box').innerHTML += `<div class="chat-msg chat-out">${i.value}</div>`; i.value=""; }
+
+    function searchRes() {
+        const query = document.getElementById('resSearch').value.toLowerCase();
+        document.querySelectorAll('.res-card').forEach(card => {
+            card.style.display = card.querySelector('.res-name').innerText.toLowerCase().includes(query) ? 'block' : 'none';
+        });
+    }
+
+    function searchMenu() {
+        const query = document.getElementById('menuSearch').value.toLowerCase();
+        document.querySelectorAll('.menu-card').forEach(card => {
+            card.style.display = card.querySelector('.item-name').innerText.toLowerCase().includes(query) ? 'block' : 'none';
+        });
+    }
 </script>
 </body>
 </html>
