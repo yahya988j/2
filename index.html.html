@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>شاهين إكسبريس | النسخة الكاملة 🦅</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-firestore-compat.js"></script>
@@ -115,6 +117,7 @@
             <div id="register-fields" style="display: none;">
                 <input type="text" id="uName" placeholder="الاسم الكامل">
                 <input type="tel" id="uPhone" placeholder="رقم الجوال">
+                <input type="text" id="uAddress" placeholder="العنوان بالتفصيل (يدوياً)">
             </div>
             <input type="email" id="uEmail" placeholder="البريد الإلكتروني">
             <input type="password" id="uPass" placeholder="كلمة السر">
@@ -126,6 +129,7 @@
             <i class="fas fa-envelope-open-text fa-4x" style="color:var(--gold); margin-bottom:20px;"></i>
             <h2 style="color:var(--gold)">تحقق من بريدك!</h2>
             <p id="verify-text" style="font-size:14px; line-height:1.6;">أرسلنا رابط التحقق إلى إيميلك.<br>اضغط على الرابط لتفعيل الدخول والموقع.</p>
+            <p style="font-size: 11px; color: #888; margin-top: 10px; background: rgba(255,255,255,0.05); padding: 5px; border-radius: 5px;">* تنبيه هام: يرجى التحقق من مجلد البريد العشوائي (Spam) أو الرسائل غير المرغوب فيها (Junk Mail) إذا لم تصلك الرسالة في البريد الوارد.</p>
             <button class="btn-gold" style="margin-top:20px; background:transparent; border:1px solid var(--gold); color:var(--gold);" onclick="location.reload()">العودة للرئيسية</button>
         </div>
     </div>
@@ -170,12 +174,21 @@
 
     <div id="p-profile" class="page">
         <h2 style="color:var(--gold)">حسابي الشخصي 👤</h2>
-        <div class="card">
-            <div><b>الاسم:</b> <span id="my-name">--</span></div>
-            <div style="margin-top:10px;"><b>الجوال:</b> <span id="my-phone">--</span></div>
-            <div style="margin-top:10px;"><b>العنوان:</b> <span style="color:var(--gold)">حي الصقور - الرياض</span></div>
+        <div class="card" style="border: 1px solid var(--gold); padding: 20px;">
+            <div style="border-bottom: 1px solid rgba(212,175,55,0.2); padding-bottom: 10px;"><b><i class="fas fa-user"></i> الاسم:</b> <span id="my-name">--</span></div>
+            <div style="border-bottom: 1px solid rgba(212,175,55,0.2); padding: 10px 0;"><b><i class="fas fa-phone"></i> الجوال:</b> <span id="my-phone">--</span></div>
+            <div style="padding-top: 10px;"><b><i class="fas fa-map-marker-alt"></i> العنوان:</b> <span id="my-address" style="color:var(--gold)">--</span></div>
         </div>
-        <button class="btn-gold" style="background:#e74c3c; color:white; margin-top:auto;" onclick="logout()">خروج</button>
+        
+        <h3 style="color:var(--gold); font-size: 14px; margin-top: 10px;">تحديد موقعي على الخريطة 📍</h3>
+        <div id="profile-map" style="width: 100%; height: 200px; border-radius: 15px; border: 2px solid var(--gold); margin-bottom: 15px;"></div>
+        
+        <div style="display:flex; gap:10px; margin-bottom: 15px;">
+            <button class="btn-gold" style="flex:1; font-size: 12px; background: rgba(212,175,55,0.1); border:1px solid var(--gold); color:var(--gold);" onclick="updateGPSProfile()">جلب تلقائي 📡</button>
+            <button class="btn-gold" style="flex:1; font-size: 12px;" onclick="saveMapSelection()">حفظ يدوياً ✅</button>
+        </div>
+        
+        <button class="btn-gold" style="background:#e74c3c; color:white; margin-top:auto;" onclick="logout()">خروج من العرين</button>
     </div>
 
     <div id="tab-bar" class="tab-bar">
@@ -205,6 +218,8 @@
 
     let data = []; // تم تغييرها من const للسماح بالتحديث السحابي
     let cart = [], currentResId = null, orderHistory = [], cancelInterval = null, isLoginMode = true;
+    let currentOrderKey = null, userLoc = { lat: 0, lng: 0 }; // متغيرات جديدة للموقع والطلب
+    let profileMap = null, mapMarker = null;
 
     // --- الربط السحابي: سحب المطاعم لحظياً من نفس مسار لوحة القائد ---
     rdb.ref('sh_restaurants').on('value', (snapshot) => {
@@ -257,31 +272,28 @@
         const e = document.getElementById('uEmail').value;
         const p = document.getElementById('uPass').value;
         const ph = document.getElementById('uPhone').value;
+        const addr = document.getElementById('uAddress').value;
         const btn = document.getElementById('auth-btn');
-        if(!n || !e || !p || !ph) return showNotify("يرجى إكمال كافة الحقول يا صقر", "error");
+        if(!n || !e || !p || !ph || !addr) return showNotify("يرجى إكمال كافة الحقول يا صقر", "error");
         try {
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التحليق...';
-            await auth.signOut();
-            const res = await auth.createUserWithEmailAndPassword(e, p);
-            const actionCodeSettings = { url: 'https://0-five-psi.vercel.app/', handleCodeInApp: true };
-            await res.user.sendEmailVerification(actionCodeSettings);
-            await db.collection("users").doc(res.user.uid).set({ name: n, phone: ph, email: e });
-            await auth.signOut();
+            // منع التداخل البرمجي أثناء إنشاء الحساب
+            const userCredential = await auth.createUserWithEmailAndPassword(e, p);
+            await userCredential.user.sendEmailVerification();
+            await db.collection("users").doc(userCredential.user.uid).set({ name: n, phone: ph, email: e, address: addr });
+            showNotify("تم تسجيل عميل جديد لدى صقور الشاهين 🦅", "success");
             document.getElementById('login-form-ui').style.display = 'none';
             document.getElementById('verify-wait-ui').style.display = 'block';
-            showNotify("تم إرسال رابط التفعيل بنجاح 📧 فحص البريد الوارد");
+            await auth.signOut();
             btn.disabled = false;
-            btn.innerText = "تسجيل وإرسال رابط التحقق";
         } catch (err) {
             btn.disabled = false;
             btn.innerText = "تسجيل وإرسال رابط التحقق";
             if(err.code === 'auth/email-already-in-use') {
                 showNotify("هذا الإيميل مسجل مسبقاً! جرب تسجيل الدخول.", "error");
-            } else if(err.code === 'auth/invalid-email') {
-                showNotify("صيغة البريد الإلكتروني غير صحيحة", "error");
             } else {
-                showNotify("حدث خطأ أثناء التسجيل، تأكد من إعدادات Firestore", "error");
+                showNotify("حدث خطأ: " + err.message, "error");
             }
         }
     }
@@ -294,11 +306,10 @@
         try {
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التحقق...';
-            const res = await auth.signInWithEmailAndPassword(e, p);
-            await res.user.reload();
-            const user = auth.currentUser;
-            if (user.emailVerified) {
-                loadUserData(user.uid);
+            const userCredential = await auth.signInWithEmailAndPassword(e, p);
+            await userCredential.user.reload();
+            if (auth.currentUser.emailVerified) {
+                loadUserData(auth.currentUser.uid);
             } else {
                 showNotify("يرجى تفعيل حسابك من الرابط في الإيميل أولاً", "error");
                 await auth.signOut();
@@ -308,13 +319,7 @@
         } catch (err) { 
             btn.disabled = false;
             btn.innerText = "دخول وإرسال رابط التفعيل";
-            if(err.code === 'auth/user-not-found') {
-                showNotify("هذا الحساب غير موجود، يرجى التسجيل أولاً", "error");
-            } else if(err.code === 'auth/wrong-password') {
-                showNotify("كلمة السر غير صحيحة يا صقر", "error");
-            } else {
-                showNotify("بيانات الدخول غير صحيحة، حاول مجدداً", "error"); 
-            }
+            showNotify("بيانات الدخول غير صحيحة يا صقر", "error"); 
         }
     }
 
@@ -329,11 +334,45 @@
         }
     }
 
+    function initProfileMap() {
+        if(!profileMap) {
+            profileMap = L.map('profile-map').setView([24.7136, 46.6753], 12);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(profileMap);
+            profileMap.on('click', function(e) {
+                updateMarker(e.latlng.lat, e.latlng.lng);
+            });
+        }
+        setTimeout(() => profileMap.invalidateSize(), 500);
+    }
+
+    function updateMarker(lat, lng) {
+        userLoc = { lat, lng };
+        if(mapMarker) profileMap.removeLayer(mapMarker);
+        mapMarker = L.marker([lat, lng]).addTo(profileMap);
+        profileMap.panTo([lat, lng]);
+    }
+
+    async function saveMapSelection() {
+        const user = auth.currentUser;
+        if(user && userLoc.lat !== 0) {
+            await db.collection("users").doc(user.uid).update({ lat: userLoc.lat, lng: userLoc.lng });
+            showNotify("تم حفظ موقعك اليدوي بنجاح ✅", "success");
+        } else {
+            showNotify("يرجى تحديد نقطة على الخريطة أولاً", "error");
+        }
+    }
+
     function loadUserData(uid) {
+        // التأكد من وجود صلاحية الوصول لـ Firestore
         db.collection("users").doc(uid).get().then(doc => {
             if (doc.exists) {
-                document.getElementById('my-name').innerText = doc.data().name;
-                document.getElementById('my-phone').innerText = doc.data().phone;
+                const userData = doc.data();
+                document.getElementById('my-name').innerText = userData.name;
+                document.getElementById('my-phone').innerText = userData.phone;
+                document.getElementById('my-address').innerText = userData.address || "غير محدد";
+                if(userData.lat) {
+                    userLoc = { lat: userData.lat, lng: userData.lng };
+                }
                 document.getElementById('p-login').style.display = 'none';
                 if(!localStorage.getItem('shahen_pledge')) {
                     document.getElementById('p-pledge').style.display = 'flex';
@@ -345,12 +384,30 @@
                     renderRes(); nav('p-home');
                 }
             } else {
-                showNotify("بياناتك غير موجودة في القاعدة، أعد التسجيل", "error");
-                auth.signOut();
+                showNotify("خطأ: تأكد من تفعيل Firestore في لوحة Firebase", "error");
             }
         }).catch(err => {
-            showNotify("خطأ في جلب البيانات: تأكد من تفعيل Firestore", "error");
+            console.error(err);
+            showNotify("خطأ في جلب البيانات: تحقق من إعدادات Firestore", "error");
         });
+    }
+
+    async function updateGPSProfile() {
+        if (navigator.geolocation) {
+            showNotify("جاري تحديد موقعك الجغرافي...", "info");
+            navigator.geolocation.getCurrentPosition(async (position) => {
+                const user = auth.currentUser;
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                updateMarker(lat, lng);
+                if(user) {
+                    await db.collection("users").doc(user.uid).update({ lat, lng });
+                    showNotify("تم جلب وتحديث موقعك التلقائي بنجاح ✅", "success");
+                }
+            }, (error) => {
+                showNotify("تعذر الوصول للموقع الجغرافي، تأكد من تفعيل GPS", "error");
+            });
+        }
     }
 
     auth.onAuthStateChanged(async (user) => { 
@@ -413,6 +470,16 @@
         showNotify("تمت إضافة " + n + " إلى السلة ✅");
     }
 
+    // --- دالة حذف صنف من السلة ---
+    function removeFromCart(index) {
+        cart.splice(index, 1);
+        if(cart.length === 0) currentResId = null;
+        document.getElementById('badge').innerText = cart.length;
+        if(cart.length === 0) document.getElementById('badge').style.display = 'none';
+        renderCart();
+        showNotify("تم حذف الصنف من السلة");
+    }
+
     function nav(id) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.getElementById(id).classList.add('active');
@@ -424,6 +491,7 @@
         }
         if(id === 'p-cart') renderCart();
         if(id === 'p-history') renderHistory();
+        if(id === 'p-profile') initProfileMap();
     }
 
     function renderCart() {
@@ -438,12 +506,17 @@
                     <div style="flex:1; text-align:right; margin-right:15px;"><b>${res.name}</b><br><small>الوقت المقدر: ${res.time}</small></div>
                 </div>
             </div>
-        ` + cart.map(i => `
+        ` + cart.map((i, index) => `
             <div class="card" style="margin-top:5px; border-radius:10px;"><div class="flex-reverse">
                 <img src="${i.img}" width="40" height="40" style="border-radius:8px; margin-right:10px;">
                 <div style="flex:1; text-align:right;"><b>${i.n}</b><br><small style="color:var(--gold)">${i.p} ل.س</small></div>
+                <i class="fas fa-trash-alt" style="color:#e74c3c; cursor:pointer; padding:10px;" onclick="removeFromCart(${index})"></i>
             </div></div>
-        `).join('');
+        `).join('') + `
+            <div class="card" style="margin-top:10px; background:rgba(212,175,55,0.05);">
+                <input type="text" id="order-notes" placeholder="أضف ملاحظاتك للمندوب (اختياري)..." style="margin:0; font-size:12px; border:1px dashed var(--gold);">
+            </div>
+        `;
         const sub = cart.reduce((s,i) => s+i.p, 0);
         sum.style.display = 'block';
         sum.innerHTML = `
@@ -458,6 +531,45 @@
     }
 
     function confirmOrderStart() {
+        // --- استخدام الإحداثيات المسجلة مسبقاً أو جلبها حالياً ---
+        if (userLoc.lat !== 0) {
+            executeOrderSubmission();
+        } else if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition((position) => {
+                userLoc = { lat: position.coords.latitude, lng: position.coords.longitude };
+                executeOrderSubmission();
+            }, (error) => {
+                userLoc = { lat: 0, lng: 0 };
+                executeOrderSubmission();
+            });
+        } else {
+            executeOrderSubmission();
+        }
+    }
+
+    function executeOrderSubmission() {
+        const res = data.find(r => r.id === currentResId);
+        const sub = cart.reduce((s,i) => s+i.p, 0);
+        const notes = document.getElementById('order-notes') ? document.getElementById('order-notes').value : "";
+        const orderData = {
+            customer: document.getElementById('my-name').innerText,
+            phone: document.getElementById('my-phone').innerText,
+            address: document.getElementById('my-address').innerText, // العنوان اليدوي من البروفايل
+            res: res.name,
+            total: sub + res.fee,
+            items: cart,
+            notes: notes, // إضافة الملاحظات للبيانات
+            lat: userLoc.lat,
+            lng: userLoc.lng, // الموقع الجغرافي (GPS) لكي يراه المندوب
+            status: 'searching',
+            date: new Date().toLocaleString('ar-SA')
+        };
+        
+        // إرسال الطلب لـ Firebase والحصول على Key لمتابعته
+        const newOrderRef = rdb.ref('sh_public_orders').push();
+        currentOrderKey = newOrderRef.key;
+        newOrderRef.set(orderData);
+
         document.getElementById('eagle-confirm').style.display = 'flex';
         setTimeout(() => {
             document.getElementById('eagle-confirm').style.display = 'none';
@@ -467,28 +579,41 @@
 
     function startSearching() {
         document.getElementById('eagle-searching').style.display = 'flex';
-        let timeLeft = 15;
+        let timeLeft = 30; // زيادة الوقت للبحث
         document.getElementById('cancel-timer').innerText = timeLeft;
         document.getElementById('cancel-btn').style.display = 'block';
         
+        // مراقبة حالة الطلب في Firebase: لا ينقبل إلا إذا غيره المندوب
+        rdb.ref('sh_public_orders/' + currentOrderKey).on('value', (snap) => {
+            const val = snap.val();
+            if (val && val.status === 'accepted') {
+                clearInterval(cancelInterval);
+                rdb.ref('sh_public_orders/' + currentOrderKey).off(); // وقف المراقبة
+                document.getElementById('cancel-btn').style.display = 'none';
+                document.getElementById('searching-text').innerText = "تم قبول طلبك من الصقر " + (val.driverName || "أحمد") + "!";
+                setTimeout(() => {
+                    document.getElementById('eagle-searching').style.display = 'none';
+                    showNotify("🦅 نوفي بعهدكم.. تم قبول الطلب!");
+                    nav('p-chat');
+                }, 2000);
+            }
+        });
+
         cancelInterval = setInterval(() => {
             timeLeft--;
             document.getElementById('cancel-timer').innerText = timeLeft;
             if (timeLeft <= 0) {
                 clearInterval(cancelInterval);
-                document.getElementById('cancel-btn').style.display = 'none';
-                document.getElementById('searching-text').innerText = "تم العثور على صقر! جاري التوصيل...";
-                setTimeout(() => {
-                    document.getElementById('eagle-searching').style.display = 'none';
-                    showNotify("🦅 نوفي بعهدكم.. تم قبول طلبك من الصقر أحمد!");
-                    nav('p-chat');
-                }, 2000);
+                rdb.ref('sh_public_orders/' + currentOrderKey).remove(); // حذف الطلب إذا لم يقبله أحد
+                document.getElementById('eagle-searching').style.display = 'none';
+                showNotify("عذراً، لم يتوفر صقور حالياً.. حاول لاحقاً", "error");
             }
         }, 1000);
     }
 
     function cancelOrder() {
         clearInterval(cancelInterval);
+        if (currentOrderKey) rdb.ref('sh_public_orders/' + currentOrderKey).remove();
         document.getElementById('eagle-searching').style.display = 'none';
         showNotify("تم إلغاء الطلب بنجاح", "info");
     }
