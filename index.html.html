@@ -8,6 +8,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
     <style>
         :root { --gold: #d4af37; --purple: #1a051a; --glass: rgba(30, 10, 30, 0.95); }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; transition: 0.3s; }
@@ -16,9 +17,12 @@
         /* ظل الشعار الملكي الواضح في وسط الصفحة البنفسجية */
         .royal-bg-shadow { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 380px; height: 380px; background: url('https://i.postimg.cc/3RmMjYNd/Whats-App-Image-2026-04-10-at-6-22-30-PM.jpg') no-repeat center/contain; opacity: 0.15; pointer-events: none; z-index: 0; filter: grayscale(100%) brightness(0.6); }
         
-        /* إطار التطبيق */
+        /* إطار التطبيق باللون البنفسجي المطلب */
         .app-shell { width: 375px; height: 812px; max-height: 95vh; background: var(--purple); border: 2px solid rgba(212,175,55,0.3); border-radius: 40px; position: relative; display: flex; flex-direction: column; overflow: hidden; z-index: 10; box-shadow: 0 20px 50px rgba(0,0,0,1); }
         
+        /* ظل الصورة المطلوب في وسط الإطار تماماً */
+        .app-shell::before { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 320px; height: 320px; background: url('https://collection.cloudinary.com/dmyfkuoxw/6c502f98db492851ee921839914a8231') no-repeat center/contain; opacity: 0.12; pointer-events: none; z-index: 1; filter: drop-shadow(0 0 10px rgba(212,175,55,0.2)); }
+
         /* نظام الإشعارات الداخلي الجديد */
         #in-app-notify { position: absolute; top: -100px; left: 50%; transform: translateX(-50%); width: 90%; padding: 15px; border-radius: 20px; text-align: center; font-weight: bold; z-index: 9999; box-shadow: 0 10px 30px rgba(0,0,0,0.5); transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; align-items: center; justify-content: center; gap: 10px; }
         #in-app-notify.show { top: 20px; }
@@ -38,7 +42,11 @@
         .confirm-logo { width: 200px; border-radius: 50%; border: 4px solid var(--gold); animation: scaleUp 0.5s ease-out; }
         @keyframes scaleUp { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-        .page { display: none; padding: 20px; flex-grow: 1; overflow-y: auto; padding-bottom: 100px; scrollbar-width: none; }
+        /* نافذة التعهد الشرعي */
+        #p-pledge { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--purple); z-index: 10005; display: none; align-items: center; justify-content: center; padding: 30px; text-align: center; }
+        .pledge-card { background: var(--glass); border: 2px solid var(--gold); border-radius: 30px; padding: 25px; box-shadow: 0 0 30px var(--gold); position: relative; z-index: 10; }
+
+        .page { display: none; padding: 20px; flex-grow: 1; overflow-y: auto; padding-bottom: 100px; scrollbar-width: none; position: relative; z-index: 5; }
         .page.active { display: flex; flex-direction: column; animation: fadeIn 0.4s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; } }
 
@@ -48,7 +56,7 @@
         .btn-gold:active { transform: scale(0.95); opacity: 0.8; }
         
         /* الملاحة السفلي */
-        .tab-bar { height: 80px; background: #000; display: none; justify-content: space-around; align-items: center; border-top: 1px solid rgba(212,175,55,0.1); position: absolute; bottom: 0; width: 100%; }
+        .tab-bar { height: 80px; background: #000; display: none; justify-content: space-around; align-items: center; border-top: 1px solid rgba(212,175,55,0.1); position: absolute; bottom: 0; width: 100%; z-index: 100; }
         .tab-item { color: #555; text-align: center; flex: 1; font-size: 11px; position: relative; cursor: pointer; }
         .tab-item:active { transform: scale(0.9); }
         .tab-item.active { color: var(--gold); }
@@ -71,6 +79,20 @@
 
 <div class="app-shell">
     <div id="in-app-notify"><i id="notify-icon"></i> <span id="notify-msg"></span></div>
+
+    <div id="p-pledge">
+        <div class="pledge-card">
+            <i class="fas fa-handshake fa-3x" style="color:var(--gold); margin-bottom:15px;"></i>
+            <h3 style="color:var(--gold)">ميثاق الأمانة</h3>
+            <p style="font-weight: bold; font-size: 16px; margin-bottom: 10px; color: #fff;">قال الله تعالى:﴿أَلَمْ يَعْلَمْ بِأَنَّ اللَّهَ يرى﴾</p>
+            <p style="font-size: 13px; line-height: 1.6; color: #ddd;">أتعهد أمام الله ثم أمام شركة صقور الشاهين بعدم التلاعب بالطلبات أو إلغائها دون حق، وعدم الإضرار برزق المناديب، والالتزام بالأمانة.</p>
+            <div style="margin: 20px 0; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                <input type="checkbox" id="pledge-check" style="width:20px; height:20px; margin:0; cursor: pointer;">
+                <label for="pledge-check" style="font-size:14px; color:var(--gold); cursor: pointer;">أقسم بالله وأتعهد بذلك</label>
+            </div>
+            <button class="btn-gold" onclick="acceptPledge()">بدء الاستخدام 🦅</button>
+        </div>
+    </div>
 
     <div id="eagle-confirm">
         <img src="https://i.postimg.cc/3RmMjYNd/Whats-App-Image-2026-04-10-at-6-22-30-PM.jpg" class="confirm-logo">
@@ -179,9 +201,29 @@
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
+    const rdb = firebase.database();
 
-    const data = [];
+    let data = []; // تم تغييرها من const للسماح بالتحديث السحابي
     let cart = [], currentResId = null, orderHistory = [], cancelInterval = null, isLoginMode = true;
+
+    // --- الربط السحابي: سحب المطاعم لحظياً من نفس مسار لوحة القائد ---
+    rdb.ref('sh_restaurants').on('value', (snapshot) => {
+        const val = snapshot.val();
+        if (val) {
+            data = Object.keys(val).map(key => ({
+                id: key,
+                name: val[key].name,
+                img: val[key].image,
+                fee: parseInt(val[key].deliveryPrice) || 0,
+                time: val[key].workHours || "30-45 دقيقة",
+                menu: val[key].menu ? (Array.isArray(val[key].menu) ? val[key].menu : Object.values(val[key].menu)).map(m => ({ n: m.itemName, p: parseInt(m.price) || 0, img: m.itemImage || val[key].image })) : []
+            }));
+            renderRes(); // تحديث الواجهة فوراً عند أي إضافة من لوحة التحكم
+        } else {
+            data = [];
+            renderRes();
+        }
+    });
 
     function showNotify(msg, type = 'success') {
         const n = document.getElementById('in-app-notify');
@@ -200,6 +242,14 @@
         document.getElementById('auth-btn').innerText = isLoginMode ? "دخول وإرسال رابط التفعيل" : "تسجيل وإرسال رابط التحقق";
         document.getElementById('toggle-text').innerText = isLoginMode ? "ليس لديك حساب؟ إنشاء حساب" : "لديك حساب بالفعل؟ تسجيل دخول";
         document.getElementById('auth-btn').setAttribute('onclick', isLoginMode ? 'loginUser()' : 'registerUser()');
+    }
+
+    function acceptPledge() {
+        if(!document.getElementById('pledge-check').checked) return showNotify("يجب الموافقة على التعهد للمتابعة", "error");
+        localStorage.setItem('shahen_pledge', 'accepted');
+        document.getElementById('p-pledge').style.display = 'none';
+        document.getElementById('tab-bar').style.display = 'flex';
+        renderRes(); nav('p-home');
     }
 
     async function registerUser() {
@@ -285,9 +335,15 @@
                 document.getElementById('my-name').innerText = doc.data().name;
                 document.getElementById('my-phone').innerText = doc.data().phone;
                 document.getElementById('p-login').style.display = 'none';
-                document.getElementById('tab-bar').style.display = 'flex';
-                renderRes();
-                nav('p-home');
+                if(!localStorage.getItem('shahen_pledge')) {
+                    document.getElementById('p-pledge').style.display = 'flex';
+                    document.getElementById('tab-bar').style.display = 'none';
+                    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+                } else {
+                    document.getElementById('p-pledge').style.display = 'none';
+                    document.getElementById('tab-bar').style.display = 'flex';
+                    renderRes(); nav('p-home');
+                }
             } else {
                 showNotify("بياناتك غير موجودة في القاعدة، أعد التسجيل", "error");
                 auth.signOut();
@@ -306,7 +362,7 @@
         }
     });
 
-    function logout() { auth.signOut(); location.reload(); }
+    function logout() { localStorage.removeItem('shahen_pledge'); auth.signOut(); location.reload(); }
 
     function login(t) {
         if(t !== 'dev') {
@@ -323,11 +379,11 @@
 
     function renderRes() {
         if (data.length === 0) {
-            document.getElementById('res-list').innerHTML = "<p style='text-align:center; opacity:0.5; margin-top:20px;'>جاري تحميل المطاعم...</p>";
+            document.getElementById('res-list').innerHTML = "<p style='text-align:center; opacity:0.5; margin-top:20px;'>جاري انتظار البيانات من قاعدة شاهين...</p>";
             return;
         }
         document.getElementById('res-list').innerHTML = data.map(r => `
-            <div class="card res-card" onclick="openMenu(${r.id})" style="cursor:pointer;">
+            <div class="card res-card" onclick="openMenu('${r.id}')" style="cursor:pointer;">
                 <div class="flex-reverse">
                     <img src="${r.img}" width="65" height="65" style="border-radius:12px; border:1px solid var(--gold);">
                     <div style="flex:1; text-align:right; margin-right:15px;"><b class="res-name">${r.name}</b><br><small style="color:var(--gold)">توصيل: ${r.fee} ل.س • ${r.time}</small></div>
@@ -343,7 +399,7 @@
             <div class="card menu-card" style="cursor:pointer;"><div class="flex-reverse">
                 <img src="${m.img}" width="60" height="60" style="border-radius:10px; margin-right:10px; border:1px solid rgba(212,175,55,0.3);">
                 <div style="text-align:right; flex:1;"><b class="item-name">${m.n}</b><br><b style="color:var(--gold)">${m.p} ل.س</b></div>
-                <i class="fas fa-plus-circle" style="color:var(--gold); font-size:24px;" onclick="addToCart(${res.id},'${m.n}',${m.p},'${m.img}')"></i>
+                <i class="fas fa-plus-circle" style="color:var(--gold); font-size:24px;" onclick="addToCart('${res.id}','${m.n}',${m.p},'${m.img}')"></i>
             </div></div>
         `).join('');
         nav('p-menu');
@@ -361,8 +417,11 @@
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.getElementById(id).classList.add('active');
         document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
-        const activeTab = Array.from(document.querySelectorAll('.tab-item')).find(t => t.innerText.includes(document.getElementById(id).querySelector('h2').innerText.split(' ')[0]));
-        if(activeTab) activeTab.classList.add('active');
+        const titles = document.getElementById(id).getElementsByTagName('h2');
+        if(titles.length > 0) {
+            const activeTab = Array.from(document.querySelectorAll('.tab-item')).find(t => t.innerText.includes(titles[0].innerText.split(' ')[0]));
+            if(activeTab) activeTab.classList.add('active');
+        }
         if(id === 'p-cart') renderCart();
         if(id === 'p-history') renderHistory();
     }
