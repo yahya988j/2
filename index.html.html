@@ -304,6 +304,7 @@
     let historyTab = 'active'; 
     let currentRating = 0;
     let lastStatusNotified = ""; 
+    let discountAmount = 0, appliedCoupon = "";
 
     rdb.ref('sh_settings/promo_text').on('value', (snap) => {
         const text = snap.val();
@@ -595,7 +596,7 @@
 
     function removeFromCart(index) {
         cart.splice(index, 1);
-        if(cart.length === 0) currentResId = null;
+        if(cart.length === 0) { currentResId = null; appliedCoupon = ""; discountAmount = 0; }
         document.getElementById('badge').innerText = cart.length;
         if(cart.length === 0) document.getElementById('badge').style.display = 'none';
         renderCart();
@@ -637,18 +638,40 @@
             <div class="card" style="margin-top:10px; background:rgba(212,175,55,0.05);">
                 <input type="text" id="order-notes" placeholder="أضف ملاحظاتك للمندوب (اختياري)..." style="margin:0; font-size:12px; border:1px dashed var(--gold);">
             </div>
+            <div class="card" style="margin-top:5px; display:flex; gap:10px; align-items:center; padding:10px;">
+                <input type="text" id="coupon-inp" placeholder="كود الخصم" style="margin:0; flex:1; padding:10px;" value="${appliedCoupon}">
+                <button class="btn-gold" style="width:auto; padding:10px 15px;" onclick="applyCoupon()">تطبيق</button>
+            </div>
         `;
         const sub = cart.reduce((s,i) => s+i.p, 0);
         sum.style.display = 'block';
+        const finalTotal = sub + res.fee - discountAmount;
         sum.innerHTML = `
             <div style="font-size:14px;">
                 <div style="display:flex; justify-content:space-between"><span>مجموع الوجبات:</span><span>${sub} ل.س</span></div>
                 <div style="display:flex; justify-content:space-between; margin:5px 0;"><span>رسوم التوصيل:</span><span>${res.fee} ل.س</span></div>
+                ${discountAmount > 0 ? `<div style="display:flex; justify-content:space-between; color:#2ecc71;"><span>خصم الكوبون:</span><span>-${discountAmount} ل.س</span></div>` : ''}
                 <hr style="border:0; border-top:1px solid #333;">
-                <div style="display:flex; justify-content:space-between; color:var(--gold); font-size:18px; font-weight:bold;"><span>الإجمالي:</span><span>${sub+res.fee} ل.س</span></div>
+                <div style="display:flex; justify-content:space-between; color:var(--gold); font-size:18px; font-weight:bold;"><span>الإجمالي:</span><span>${finalTotal > 0 ? finalTotal : 0} ل.س</span></div>
             </div>
             <button class="btn-gold" id="final-confirm-btn" style="margin-top:15px" onclick="confirmOrderStart()">تأكيد الطلب 🦅</button>
         `;
+    }
+
+    async function applyCoupon() {
+        const cp = document.getElementById('coupon-inp').value.trim();
+        if(!cp) return;
+        rdb.ref('sh_settings/coupons/' + cp).once('value', snap => {
+            const val = snap.val();
+            if(val && val.active) {
+                appliedCoupon = cp;
+                discountAmount = parseInt(val.amount) || 0;
+                showNotify("تم تطبيق الخصم بنجاح! ✅", "success");
+                renderCart();
+            } else {
+                showNotify("كود الخصم غير صحيح أو منتهي", "error");
+            }
+        });
     }
 
     function confirmOrderStart() {
@@ -682,7 +705,7 @@
             phone: document.getElementById('my-phone').innerText,
             address: document.getElementById('my-address').innerText,
             res: res.name,
-            total: sub + res.fee,
+            total: sub + res.fee - discountAmount,
             items: cart,
             notes: notes,
             lat: userLoc.lat,
@@ -692,7 +715,8 @@
             clientConfirmed: false,
             driverDone: false,
             verifyCode: vCode,
-            customerUID: auth.currentUser.uid 
+            customerUID: auth.currentUser.uid,
+            couponUsed: appliedCoupon 
         };
         const newOrderRef = rdb.ref('sh_public_orders').push();
         currentOrderKey = newOrderRef.key;
@@ -753,7 +777,7 @@
                 document.getElementById('call-driver-btn').onclick = () => { if(val.driverPhone) window.open(`tel:${val.driverPhone}`); };
                 document.getElementById('rate-driver-name').innerText = val.driverName || "صقر شاهين";
 
-                cart = []; currentResId = null;
+                cart = []; currentResId = null; appliedCoupon = ""; discountAmount = 0;
                 document.getElementById('badge').innerText = 0;
                 document.getElementById('badge').style.display = 'none';
                 
@@ -861,11 +885,12 @@
 
     function renderHistory() {
         const cont = document.getElementById('history-content');
+        const currentUserUID = auth.currentUser ? auth.currentUser.uid : null;
         if(historyTab === 'active') {
             if(!currentOrderKey) { cont.innerHTML = "<p style='text-align:center;'>لا توجد طلبات نشطة حالياً 🦅</p>"; return; }
             rdb.ref('sh_public_orders/' + currentOrderKey).once('value', snap => {
                 const val = snap.val();
-                if(val) {
+                if(val && val.customerUID === currentUserUID) {
                     cont.innerHTML = `
                         <div class="card" onclick="nav('p-chat')" style="cursor:pointer; border-right: 4px solid var(--gold);">
                             <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -874,11 +899,12 @@
                             </div>
                         </div>
                     `;
-                }
+                } else { cont.innerHTML = "<p style='text-align:center;'>لا توجد طلبات نشطة حالياً 🦅</p>"; }
             });
         } else {
+            // فلترة السجل المحلي ليعرض فقط ما يخص المستخدم الحالي (في حال كان هناك مستخدمين متعددين على نفس المتصفح)
             if(orderHistory.length === 0) { cont.innerHTML = "<p style='text-align:center;'>سجلك خالي من الطلبات السابقة</p>"; return; }
-            cont.innerHTML = orderHistory.map(h => `
+            cont.innerHTML = orderHistory.filter(h => h.uid === currentUserUID).map(h => `
                 <div class="card" style="opacity:0.8; border-right: 4px solid #555;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
                         <b>${h.resName}</b>
@@ -891,6 +917,7 @@
                     <div style="margin-top:5px; font-size:11px; color:#888;"><i class="fas fa-motorcycle"></i> المندوب: ${h.driverName}</div>
                 </div>
             `).join('');
+            if(cont.innerHTML === "") cont.innerHTML = "<p style='text-align:center;'>سجلك خالي من الطلبات السابقة</p>";
         }
     }
 
@@ -904,13 +931,14 @@
                     date: val.date || new Date().toLocaleString('ar-SA'),
                     status: 'delivered',
                     driverName: val.driverName || "صقر شاهين",
-                    userRating: val.rating || currentRating || 5
+                    userRating: val.rating || currentRating || 5,
+                    uid: auth.currentUser.uid
                 };
                 orderHistory.unshift(newEntry);
                 localStorage.setItem('shahen_local_history', JSON.stringify(orderHistory));
             }
             const oldKey = currentOrderKey; currentOrderKey = null;
-            lastStatusNotified = ""; 
+            lastStatusNotified = ""; appliedCoupon = ""; discountAmount = 0;
             rdb.ref('sh_chats/' + oldKey).off();
             rdb.ref('sh_public_orders/' + oldKey).off();
             document.getElementById('delivery-confirm-box').style.display = 'none';
@@ -930,9 +958,9 @@
                     const isMe = msg.sender === 'client';
                     const msgDiv = document.createElement('div');
                     msgDiv.className = `chat-msg ${isMe ? 'chat-out' : 'chat-in'}`;
-                    // تعديل منطق استقبال الصور لضمان التعرف عليها من أي طرف وعرض الرابط كصورة
-                    if(msg.type === 'image' || msg.url || (msg.text && (msg.text.startsWith('http://') || msg.text.startsWith('https://')) && (msg.text.includes('.jpg') || msg.text.includes('.png') || msg.text.includes('.webp') || msg.text.includes('firebasestorage')))) {
-                        const imgUrl = msg.url || msg.text;
+                    const imgUrl = msg.url || msg.text;
+                    const isUrl = (typeof imgUrl === 'string' && (imgUrl.startsWith('http') || imgUrl.includes('firebasestorage')));
+                    if(msg.type === 'image' || (isUrl && !msg.text.includes("جاري"))) {
                         msgDiv.innerHTML = `<img src="${imgUrl}" class="chat-img" onload="this.parentElement.parentElement.scrollTop = this.parentElement.parentElement.scrollHeight" onclick="window.open('${imgUrl}')">`;
                         msgDiv.style.background = "transparent"; msgDiv.style.padding = "0";
                     } else if (msg.text && msg.text !== "جاري ارسال صورة") {
@@ -972,7 +1000,7 @@
         try {
             const snapshot = await storageRef.put(file);
             const url = await snapshot.ref.getDownloadURL();
-            // تحديث الرسالة المؤقتة بالرابط الفعلي للصورة
+            // تحديث الرسالة المؤقتة بالرابط الفعلي للصورة وتغيير النوع لضمان عرضها كصورة
             await tempMsgRef.update({ text: url, url: url, type: 'image' });
             showNotify("تم إرسال الصورة بنجاح ✅");
         } catch (e) {
