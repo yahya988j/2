@@ -83,7 +83,8 @@
         .chat-msg { padding: 10px 15px; border-radius: 15px; margin: 5px 0; max-width: 80%; font-size: 14px; word-wrap: break-word; }
         .chat-in { background: #333; align-self: flex-start; border-bottom-left-radius: 2px; }
         .chat-out { background: var(--gold); color: #000; align-self: flex-end; border-bottom-right-radius: 2px; }
-        .chat-img { width: 100%; max-width: 100%; height: auto; border-radius: 10px; margin-top: 5px; cursor: pointer; border: 1px solid rgba(212,175,55,0.3); display: block; object-fit: contain; }
+        /* حل نهائي لمشكلة الصور وضمان ظهورها */
+        .chat-img { width: 100%; max-width: 250px; min-height: 150px; height: auto; border-radius: 10px; margin-top: 5px; cursor: pointer; border: 2px solid var(--gold); display: block; object-fit: cover; background: #222; min-width: 200px; }
 
         /* تنسيق التقييم بالنجوم */
         .rating-stars { color: #555; cursor: pointer; font-size: 28px; margin: 15px 0; }
@@ -171,7 +172,7 @@
             <i class="fas fa-envelope-open-text fa-4x" style="color:var(--gold); margin-bottom:20px;"></i>
             <h2 style="color:var(--gold)">تحقق من بريدك!</h2>
             <p id="verify-text" style="font-size:14px; line-height:1.6;">أرسلنا رابط التحقق إلى إيميلك.<br>اضغط على الرابط لتفعيل الدخول والموقع.</p>
-            <p style="font-size: 11px; color: #888; margin-top: 10px; background: rgba(255,255,255,0.05); padding: 5px; border-radius: 5px;">* تنبيه هام: يرجى التحقق من مجلد البريد العشوائي (Spam) أو الرسائل غير المرغوب فيها (Junk Mail) إذا لم تصلك الرسالة في البريد الوارد.</p>
+            <p style="font-size: 11px; color: #888; margin-top: 10px; background: rgba(255,255,255,0.05); padding: 5px; border-radius: 5px;">* تننبيه هام: يرجى التحقق من مجلد البريد العشوائي (Spam) أو الرسائل غير المرغوب فيها (Junk Mail) إذا لم تصلك الرسالة في البريد الوارد.</p>
             <button class="btn-gold" style="margin-top:20px; background:transparent; border:1px solid var(--gold); color:var(--gold);" onclick="location.reload()">العودة للرئيسية</button>
         </div>
     </div>
@@ -297,7 +298,7 @@
     const storage = firebase.storage();
 
     let data = []; 
-    let cart = [], currentResId = null, orderHistory = [], cancelInterval = null, isLoginMode = true;
+    let cart = [], currentResId = null, orderHistory = JSON.parse(localStorage.getItem('shahen_local_history') || "[]"), cancelInterval = null, isLoginMode = true;
     let currentOrderKey = null, userLoc = { lat: 0, lng: 0 }; 
     let profileMap = null, mapMarker = null;
     let historyTab = 'active'; 
@@ -358,7 +359,7 @@
             "صباح الخير 🌅 جاهز تبدأ يومك؟ صقور الشاهين معك 👌 اطلب أي شي بدك ياه ويوصلك بسرعة البرق 🚀",
             "🎁 عرض اليوم عند صقور الشاهين! اطلب الآن وخلي طلبك يوصل لعندك بدون تعب 😎 جرب الخدمة وراح تعتمدنا يومياً 💯",
             "من أسرع توصيل؟ أكيد صقور الشاهين 💪 طلبك علينا… نوصل لك وين ما كنت!",
-            "1️⃣ صقور الشاهين تحلّق في السماء… هل أنت مستعد يكون طلبك بين مخالبها؟ 🦅🔥",
+            "1️⃣ صقور الشاهين تحلّق في السماء… هل أنت مستعد يكون طلبك بين مخالبها? 🦅🔥",
             "💡 تذكير بسيط: أي طلب بأي وقت… صقور الشاهين جاهز 💙 جربنا مرة… وراح تصير زبون دائم 😉"
         ];
         msgs.forEach((m, i) => {
@@ -486,11 +487,12 @@
     }
 
     function loadUserData(uid) {
+        // إضافة مستمع لبيانات المستخدم مع معالجة حالة عدم الوجود المبدئي
         db.collection("users").doc(uid).onSnapshot(doc => {
             if (doc.exists) {
                 const userData = doc.data();
-                document.getElementById('my-name').innerText = userData.name;
-                document.getElementById('my-phone').innerText = userData.phone;
+                document.getElementById('my-name').innerText = userData.name || "--";
+                document.getElementById('my-phone').innerText = userData.phone || "--";
                 document.getElementById('my-address').innerText = userData.address || "غير محدد";
                 document.getElementById('shahen-points').innerText = userData.points || 0;
                 if(userData.lat) {
@@ -509,8 +511,13 @@
                     scheduleAutoMessages();
                 }
             } else {
-                showNotify("خطأ في جلب بيانات المستخدم", "error");
+                // في حال لم يتم العثور على الوثيقة، نقوم بإنشاء واحدة فارغة مبدئياً لتفادي الخطأ المتكرر
+                db.collection("users").doc(uid).set({ name: "مستخدم جديد", email: auth.currentUser.email }, { merge: true });
+                console.log("Document creation initialized for new user.");
             }
+        }, (err) => {
+            console.error("Firestore error:", err);
+            showNotify("خطأ في جلب بيانات المستخدم، يرجى إعادة المحاولة", "error");
         });
     }
 
@@ -789,8 +796,10 @@
                    showNotify("🦅 صقرنا وصل! تحقق من الدردشة لتأكيد الاستلام", "info");
                 }
             } else if (val.status === 'completed' || val.clientConfirmed) {
+                // إغلاق الدردشة وإظهار التقييم فور اكتمال الطلب بالكود
                 document.getElementById('delivery-confirm-box').style.display = 'none';
                 document.getElementById('client-code-notice').style.display = 'none'; 
+                if(currentOrderKey) showVerifyCodeToClient(); 
                 if(currentOrderKey) finishOrder();
             }
         });
@@ -804,6 +813,8 @@
                 document.getElementById('rating-overlay').style.display = 'flex';
                 document.getElementById('delivery-confirm-box').style.display = 'none';
                 document.getElementById('client-code-notice').style.display = 'none';
+                // إخفاء صفحة الدردشة فوراً عند ظهور التقييم
+                if(document.getElementById('p-chat').classList.contains('active')) nav('p-history');
             }
         });
     }
@@ -825,7 +836,7 @@
             rating: currentRating,
             status: 'completed'
         });
-        showNotify("تم إرسال تقييمك بنجاح.. يرجى إعطاء الكود للمندوب لإتمام الإغلاق", "success");
+        showNotify("تم إرسال تقييمك بنجاح.. شكراً لك 🦅", "success");
         document.getElementById('rating-overlay').style.display = 'none';
         currentRating = 0; finishOrder();
     }
@@ -848,18 +859,55 @@
         renderHistory();
     }
 
+    function renderHistory() {
+        const cont = document.getElementById('history-content');
+        if(historyTab === 'active') {
+            if(!currentOrderKey) { cont.innerHTML = "<p style='text-align:center;'>لا توجد طلبات نشطة حالياً 🦅</p>"; return; }
+            rdb.ref('sh_public_orders/' + currentOrderKey).once('value', snap => {
+                const val = snap.val();
+                if(val) {
+                    cont.innerHTML = `
+                        <div class="card" onclick="nav('p-chat')" style="cursor:pointer; border-right: 4px solid var(--gold);">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <div><b>${val.res}</b><br><small>${val.status === 'accepted' ? 'تم قبول الطلب' : 'جاري التوصيل'}</small></div>
+                                <div style="color:var(--gold)">${val.total} ل.س</div>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+        } else {
+            if(orderHistory.length === 0) { cont.innerHTML = "<p style='text-align:center;'>سجلك خالي من الطلبات السابقة</p>"; return; }
+            cont.innerHTML = orderHistory.map(h => `
+                <div class="card" style="opacity:0.8; border-right: 4px solid #555;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+                        <b>${h.resName}</b>
+                        <small style="font-size:10px; color:#888;">${h.date}</small>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:12px;">
+                        <span>الإجمالي: ${h.total} ل.س</span>
+                        <span style="color:var(--gold)">التقييم: ${h.userRating} ⭐</span>
+                    </div>
+                    <div style="margin-top:5px; font-size:11px; color:#888;"><i class="fas fa-motorcycle"></i> المندوب: ${h.driverName}</div>
+                </div>
+            `).join('');
+        }
+    }
+
     function finishOrder() {
         rdb.ref('sh_public_orders/' + currentOrderKey).once('value', snap => {
             const val = snap.val();
             if(val) {
-                orderHistory.unshift({ 
+                const newEntry = { 
                     resName: val.res, 
                     total: val.total, 
-                    date: val.date,
+                    date: val.date || new Date().toLocaleString('ar-SA'),
                     status: 'delivered',
-                    driverName: val.driverName || "صقر",
-                    userRating: val.rating || 5
-                });
+                    driverName: val.driverName || "صقر شاهين",
+                    userRating: val.rating || currentRating || 5
+                };
+                orderHistory.unshift(newEntry);
+                localStorage.setItem('shahen_local_history', JSON.stringify(orderHistory));
             }
             const oldKey = currentOrderKey; currentOrderKey = null;
             lastStatusNotified = ""; 
@@ -882,12 +930,17 @@
                     const isMe = msg.sender === 'client';
                     const msgDiv = document.createElement('div');
                     msgDiv.className = `chat-msg ${isMe ? 'chat-out' : 'chat-in'}`;
-                    if(msg.type === 'image') {
-                        msgDiv.innerHTML = `<img src="${msg.url}" class="chat-img" onclick="window.open('${msg.url}')">`;
-                    } else {
+                    // تعديل منطق استقبال الصور لضمان التعرف عليها من أي طرف وعرض الرابط كصورة
+                    if(msg.type === 'image' || msg.url || (msg.text && (msg.text.startsWith('http://') || msg.text.startsWith('https://')) && (msg.text.includes('.jpg') || msg.text.includes('.png') || msg.text.includes('.webp') || msg.text.includes('firebasestorage')))) {
+                        const imgUrl = msg.url || msg.text;
+                        msgDiv.innerHTML = `<img src="${imgUrl}" class="chat-img" onload="this.parentElement.parentElement.scrollTop = this.parentElement.parentElement.scrollHeight" onclick="window.open('${imgUrl}')">`;
+                        msgDiv.style.background = "transparent"; msgDiv.style.padding = "0";
+                    } else if (msg.text && msg.text !== "جاري ارسال صورة") {
                         msgDiv.innerText = msg.text;
+                    } else if (msg.text === "جاري ارسال صورة") {
+                         msgDiv.innerHTML = `<i class="fas fa-spinner fa-spin"></i> جاري رفع الصورة...`;
                     }
-                    chatBox.appendChild(msgDiv);
+                    if(msgDiv.innerHTML !== "") chatBox.appendChild(msgDiv);
                 });
                 chatBox.scrollTop = chatBox.scrollHeight;
             }
@@ -911,13 +964,19 @@
         const file = input.files[0];
         const fileName = `chat_${currentOrderKey}_${Date.now()}.jpg`;
         const storageRef = storage.ref(`chat_images/${fileName}`);
+        
+        // إرسال رسالة مؤقتة لتنبيه الطرف الآخر
+        const tempMsgRef = rdb.ref('sh_chats/' + currentOrderKey).push({ sender: 'client', text: "جاري ارسال صورة", time: Date.now(), type: 'text' });
+        
         showNotify("جاري إرسال الصورة... 🦅", "info");
         try {
             const snapshot = await storageRef.put(file);
             const url = await snapshot.ref.getDownloadURL();
-            rdb.ref('sh_chats/' + currentOrderKey).push({ sender: 'client', url: url, time: Date.now(), type: 'image' });
+            // تحديث الرسالة المؤقتة بالرابط الفعلي للصورة
+            await tempMsgRef.update({ text: url, url: url, type: 'image' });
             showNotify("تم إرسال الصورة بنجاح ✅");
         } catch (e) {
+            tempMsgRef.remove();
             showNotify("فشل في رفع الصورة، تأكد من إعدادات الاستضافة", "error");
         }
     }
