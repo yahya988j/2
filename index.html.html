@@ -11,23 +11,29 @@
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-storage-compat.js"></script>
     <style>
         :root { --gold: #d4af37; --purple: #1a051a; --glass: rgba(30, 10, 30, 0.95); }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; transition: 0.3s; }
         body, html { margin: 0; padding: 0; height: 100vh; background: #000; color: #fff; font-family: -apple-system, sans-serif; overflow: hidden; display: flex; justify-content: center; align-items: center; }
         
+        /* شريط الإعلانات الجديد */
+        .promo-bar { background: var(--gold); color: #000; height: 30px; display: flex; align-items: center; overflow: hidden; white-space: nowrap; font-size: 12px; font-weight: bold; position: absolute; top: 0; width: 100%; z-index: 1000; border-top-left-radius: 40px; border-top-right-radius: 40px; }
+        .promo-track { display: inline-block; animation: scroll-left 15s linear infinite; padding-left: 100%; }
+        @keyframes scroll-left { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
+
         /* ظل الشعار الملكي الواضح في وسط الصفحة البنفسجية */
         .royal-bg-shadow { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 380px; height: 380px; background: url('https://i.postimg.cc/3RmMjYNd/Whats-App-Image-2026-04-10-at-6-22-30-PM.jpg') no-repeat center/contain; opacity: 0.15; pointer-events: none; z-index: 0; filter: grayscale(100%) brightness(0.6); }
         
         /* إطار التطبيق باللون البنفسجي المطلب */
-        .app-shell { width: 375px; height: 812px; max-height: 95vh; background: var(--purple); border: 2px solid rgba(212,175,55,0.3); border-radius: 40px; position: relative; display: flex; flex-direction: column; overflow: hidden; z-index: 10; box-shadow: 0 20px 50px rgba(0,0,0,1); }
+        .app-shell { width: 375px; height: 812px; max-height: 95vh; background: var(--purple); border: 2px solid rgba(212,175,55,0.3); border-radius: 40px; position: relative; display: flex; flex-direction: column; overflow: hidden; z-index: 10; box-shadow: 0 20px 50px rgba(0,0,0,1); padding-top: 30px; }
         
         /* ظل الصورة المطلوب في وسط الإطار تماماً */
-        .app-shell::before { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 320px; height: 320px; background: url('https://collection.cloudinary.com/dmyfkuoxw/6c502f98db492851ee921839914a8231') no-repeat center/contain; opacity: 0.12; pointer-events: none; z-index: 1; filter: drop-shadow(0 0 10px rgba(212,175,55,0.2)); }
+        .app-shell::before { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 320px; height: 320px; background: url('https://i.postimg.cc/3RmMjYNd/Whats-App-Image-2026-04-10-at-6-22-30-PM.jpg') no-repeat center/contain; opacity: 0.08; pointer-events: none; z-index: 1; filter: drop-shadow(0 0 10px rgba(212,175,55,0.2)); }
 
         /* نظام الإشعارات الداخلي الجديد */
         #in-app-notify { position: absolute; top: -100px; left: 50%; transform: translateX(-50%); width: 90%; padding: 15px; border-radius: 20px; text-align: center; font-weight: bold; z-index: 9999; box-shadow: 0 10px 30px rgba(0,0,0,0.5); transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; align-items: center; justify-content: center; gap: 10px; }
-        #in-app-notify.show { top: 20px; }
+        #in-app-notify.show { top: 50px; }
         .notify-success { background: var(--gold); color: #000; }
         .notify-error { background: #e74c3c; color: #fff; }
         .notify-info { background: #3498db; color: #fff; }
@@ -48,14 +54,18 @@
         #p-pledge { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--purple); z-index: 10005; display: none; align-items: center; justify-content: center; padding: 30px; text-align: center; }
         .pledge-card { background: var(--glass); border: 2px solid var(--gold); border-radius: 30px; padding: 25px; box-shadow: 0 0 30px var(--gold); position: relative; z-index: 10; }
 
+        /* نافذة التقييم الإجباري */
+        #rating-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 20000; display: none; align-items: center; justify-content: center; padding: 30px; text-align: center; }
+        .rating-box { background: var(--purple); border: 2px solid var(--gold); border-radius: 20px; padding: 20px; width: 100%; }
+
         .page { display: none; padding: 20px; flex-grow: 1; overflow-y: auto; padding-bottom: 100px; scrollbar-width: none; position: relative; z-index: 5; }
-        .page.active { display: flex; flex-direction: column; animation: fadeIn 0.4s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; } }
+        .page.active { display: none; flex-direction: column; animation: fadeIn 0.4s ease; }
+        .page.active[style*="display: flex"], .page.active[style*="display: block"] { display: flex !important; }
 
         .card { background: var(--glass); border-radius: 20px; padding: 15px; margin-bottom: 12px; border: 1px solid rgba(212, 175, 55, 0.1); }
         .btn-gold { background: var(--gold); color: #000; border: none; padding: 16px; border-radius: 15px; font-weight: bold; width: 100%; cursor: pointer; }
-        /* إضافة تفاعل للأزرار */
         .btn-gold:active { transform: scale(0.95); opacity: 0.8; }
+        .btn-disabled { background: #555 !important; color: #888 !important; cursor: not-allowed; pointer-events: none; }
         
         /* الملاحة السفلي */
         .tab-bar { height: 80px; background: #000; display: none; justify-content: space-around; align-items: center; border-top: 1px solid rgba(212,175,55,0.1); position: absolute; bottom: 0; width: 100%; z-index: 100; }
@@ -70,16 +80,29 @@
         .flex-reverse { display: flex; flex-direction: row-reverse; align-items: center; justify-content: space-between; }
         
         /* الدردشة */
-        .chat-msg { padding: 10px 15px; border-radius: 15px; margin: 5px 0; max-width: 80%; font-size: 14px; }
-        .chat-in { background: #333; align-self: flex-start; }
-        .chat-out { background: var(--gold); color: #000; align-self: flex-end; }
+        .chat-msg { padding: 10px 15px; border-radius: 15px; margin: 5px 0; max-width: 80%; font-size: 14px; word-wrap: break-word; }
+        .chat-in { background: #333; align-self: flex-start; border-bottom-left-radius: 2px; }
+        .chat-out { background: var(--gold); color: #000; align-self: flex-end; border-bottom-right-radius: 2px; }
+        .chat-img { width: 100%; max-width: 100%; height: auto; border-radius: 10px; margin-top: 5px; cursor: pointer; border: 1px solid rgba(212,175,55,0.3); display: block; object-fit: contain; }
+
+        /* تنسيق التقييم بالنجوم */
+        .rating-stars { color: #555; cursor: pointer; font-size: 28px; margin: 15px 0; }
+        .star-active { color: var(--gold); }
+
+        /* تبويبات طلباتي */
+        .history-tabs { display: flex; gap: 10px; margin-bottom: 15px; }
+        .h-tab { flex: 1; padding: 10px; text-align: center; border-radius: 10px; background: rgba(255,255,255,0.05); color: #888; cursor: pointer; font-size: 13px; }
+        .h-tab.active { background: var(--gold); color: #000; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="royal-bg-shadow"></div>
 
+<audio id="searching-sound" src="https://collection.cloudinary.com/dmyfkuoxw/cabcf128e3752f3b5a356ea6934e62dd" loop preload="auto"></audio>
+
 <div class="app-shell">
+    <div class="promo-bar" id="promo-bar" style="display:none;"><div class="promo-track" id="promo-text">استخدم كود: SH10 خصم 10% على أول طلب 🦅 - أهلاً بك في صقور الشاهين - نوفي بعهدكم دائماً 🦅</div></div>
     <div id="in-app-notify"><i id="notify-icon"></i> <span id="notify-msg"></span></div>
 
     <div id="p-pledge">
@@ -96,6 +119,25 @@
         </div>
     </div>
 
+    <div id="rating-overlay">
+        <div class="rating-box">
+            <h2 style="color:var(--gold)">قيم مندوبنا 🦅</h2>
+            <p id="rate-driver-name" style="margin-bottom:10px;">صقر الشاهين</p>
+            <div id="verify-display-box" style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; margin-bottom: 15px; border: 1px dashed var(--gold);">
+                <p style="font-size: 12px; color: var(--gold); margin-bottom: 10px;">أعطِ هذا الرمز للمندوب ليتمكن من إغلاق الطلب:</p>
+                <div id="client-reveal-code" style="text-align: center; font-size: 32px; letter-spacing: 8px; font-weight: bold; color: #fff;">0000</div>
+            </div>
+            <div class="rating-stars" id="main-rating-stars">
+                <i class="fas fa-star" onclick="setStars(1)"></i>
+                <i class="fas fa-star" onclick="setStars(2)"></i>
+                <i class="fas fa-star" onclick="setStars(3)"></i>
+                <i class="fas fa-star" onclick="setStars(4)"></i>
+                <i class="fas fa-star" onclick="setStars(5)"></i>
+            </div>
+            <button class="btn-gold" id="final-rate-btn" onclick="submitMandatoryRating()">تأكيد التقييم وإنهاء الرحلة</button>
+        </div>
+    </div>
+
     <div id="eagle-confirm">
         <img src="https://i.postimg.cc/3RmMjYNd/Whats-App-Image-2026-04-10-at-6-22-30-PM.jpg" class="confirm-logo">
         <h1 style="color:var(--gold); margin-top:20px;">نوفي بعهدكم</h1>
@@ -108,12 +150,12 @@
         <small style="color: rgba(212,175,55,0.5); margin-top: 10px;">نوفي بعهدكم</small>
     </div>
 
-    <div id="p-login" class="page active" style="justify-content:center; text-align:center;">
+    <div id="p-login" class="page active" style="justify-content:center; text-align:center; display: flex;">
         <div style="display: flex; justify-content: center; width: 100%; margin-bottom: 30px;">
             <img src="https://i.postimg.cc/3RmMjYNd/Whats-App-Image-2026-04-10-at-6-22-30-PM.jpg" width="130" style="border-radius:35px; border:3px solid var(--gold);">
         </div>
         <div id="login-form-ui">
-            <h2 style="color:var(--gold)" id="auth-title">تسجيل دخول صقر 🦅</h2>
+            <h2 style="color:var(--gold)" id="auth-title">سجل دخولك يا شاهين 🦅</h2>
             <div id="register-fields" style="display: none;">
                 <input type="text" id="uName" placeholder="الاسم الكامل">
                 <input type="tel" id="uPhone" placeholder="رقم الجوال">
@@ -156,19 +198,40 @@
     </div>
 
     <div id="p-chat" class="page">
-        <h2 style="color:var(--gold)">دردشة المندوب 🛵</h2>
-        <div id="chat-box" style="flex:1; display:flex; flex-direction:column; overflow-y:auto; padding:10px;">
-            <div class="chat-msg chat-in">أهلاً بك يا صقر، أنا مندوبك. تم قبول طلبك وجاري التنفيذ!</div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <div style="text-align: right;">
+                <h2 id="driver-chat-name" style="color:var(--gold); margin:0; font-size:18px;">دردشة المندوب 🛵</h2>
+                <small id="driver-chat-phone" style="color:#25d366; font-size: 11px; display: block;"></small>
+                <small id="driver-chat-id" style="color:rgba(212,175,55,0.6); font-family:monospace; font-size: 10px;"></small>
+            </div>
+            <i class="fas fa-phone-alt" id="call-driver-btn" style="color:var(--gold); font-size: 20px; cursor: pointer;"></i>
         </div>
-        <div style="display:flex; gap:10px; margin-top:10px;">
+        <div id="chat-box" style="flex:1; display:flex; flex-direction:column; overflow-y:auto; padding:10px; background: rgba(0,0,0,0.1); border-radius: 15px;">
+        </div>
+        <div id="client-code-notice" style="display:none; background:rgba(212,175,55,0.1); padding:12px; border-radius:15px; margin-top:5px; border:1px dashed var(--gold); text-align:center;">
+            <p style="font-size:12px; color:var(--gold); margin:0;">تم صيد طلبك! كود التحقق الخاص بك هو: <b id="reveal-order-code" style="font-size:16px; color:#fff;">----</b></p>
+        </div>
+        <div id="delivery-confirm-box" style="display:none; background:rgba(30, 10, 30, 0.95); padding:15px; border-radius:15px; margin-top:5px; border:1px solid var(--gold); text-align:center; box-shadow: 0 0 15px var(--gold);">
+            <p style="font-size:14px; margin-bottom:10px; font-weight: bold;">صقرنا بانتظارك.. هل تم توصيل الطلبية؟ 🦅</p>
+            <div style="display:flex; gap:10px;">
+                <button class="btn-gold" style="flex:1; padding:10px;" onclick="showVerifyCodeToClient()">نعم، استلمت ✅</button>
+                <button class="btn-gold" style="flex:1; padding:10px; background:#e74c3c; color:#fff;" onclick="showNotify('تم إبلاغ الإدارة، نرجو الانتظار','error')">لا ❌</button>
+            </div>
+        </div>
+        <div style="display:flex; gap:10px; margin-top:10px; align-items: center;">
+            <input type="file" id="chat-file-input" accept="image/*" style="display:none;" onchange="uploadChatImg(this)">
+            <i class="fas fa-camera" style="color:var(--gold); font-size:24px; cursor:pointer; padding:5px;" onclick="document.getElementById('chat-file-input').click()"></i>
             <input type="text" id="m-inp" placeholder="اكتب رسالة..." style="margin:0">
             <button class="btn-gold" style="width:auto; padding:0 20px;" onclick="sendMsg()"><i class="fas fa-paper-plane"></i></button>
         </div>
-        <button class="btn-gold" style="background:#2ecc71; color:#fff; margin-top:10px;" onclick="finishOrder()">تم الاستلام ✅</button>
     </div>
 
     <div id="p-history" class="page">
-        <h2 style="color:var(--gold)">طلباتي السابقة ⚡</h2>
+        <h2 style="color:var(--gold)">طلباتي ⚡</h2>
+        <div class="history-tabs">
+            <div id="tab-active" class="h-tab active" onclick="switchHistoryTab('active')">نشطة</div>
+            <div id="tab-past" class="h-tab" onclick="switchHistoryTab('past')">سابقة</div>
+        </div>
         <div id="history-content"></div>
     </div>
 
@@ -177,7 +240,24 @@
         <div class="card" style="border: 1px solid var(--gold); padding: 20px;">
             <div style="border-bottom: 1px solid rgba(212,175,55,0.2); padding-bottom: 10px;"><b><i class="fas fa-user"></i> الاسم:</b> <span id="my-name">--</span></div>
             <div style="border-bottom: 1px solid rgba(212,175,55,0.2); padding: 10px 0;"><b><i class="fas fa-phone"></i> الجوال:</b> <span id="my-phone">--</span></div>
-            <div style="padding-top: 10px;"><b><i class="fas fa-map-marker-alt"></i> العنوان:</b> <span id="my-address" style="color:var(--gold)">--</span></div>
+            <div style="padding-top: 10px;"><b><i class="fas fa-map-marker-alt"></i> العنوان المسجل:</b> <span id="my-address" style="color:var(--gold)">--</span></div>
+        </div>
+        
+        <div class="card" style="background: linear-gradient(45deg, #1a051a, #2d0a2d); border: 1px solid var(--gold);">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span>رصيد نقاط الشاهين 🦅</span>
+                <b id="shahen-points" style="color:var(--gold); font-size:20px;">0</b>
+            </div>
+        </div>
+
+        <h3 style="color:var(--gold); font-size: 14px; margin-top: 10px;">تواصل مع الإدارة 🦅</h3>
+        <div class="card" style="display: flex; flex-direction: row; justify-content: space-around; gap: 12px; padding: 15px;">
+            <a href="https://wa.me/963947628614?text=مرحبا%20صقور%20الشاهين%20لدي%20استفسار%20او%20شكوى" target="_blank" style="text-decoration: none;">
+                <i class="fab fa-whatsapp" style="color: #25d366; font-size: 35px;"></i>
+            </a>
+            <a href="https://wa.me/966546083283?text=مرحبا%20صقور%20الشاهين%20لدي%20استفسار%20او%20شكوى" target="_blank" style="text-decoration: none;">
+                <i class="fab fa-whatsapp" style="color: #25d366; font-size: 35px;"></i>
+            </a>
         </div>
         
         <h3 style="color:var(--gold); font-size: 14px; margin-top: 10px;">تحديد موقعي على الخريطة 📍</h3>
@@ -185,10 +265,10 @@
         
         <div style="display:flex; gap:10px; margin-bottom: 15px;">
             <button class="btn-gold" style="flex:1; font-size: 12px; background: rgba(212,175,55,0.1); border:1px solid var(--gold); color:var(--gold);" onclick="updateGPSProfile()">جلب تلقائي 📡</button>
-            <button class="btn-gold" style="flex:1; font-size: 12px;" onclick="saveMapSelection()">حفظ يدوياً ✅</button>
+            <button class="btn-gold" style="flex:1; font-size: 12px;" onclick="saveMapSelection()">حفظ العنوان ✅</button>
         </div>
         
-        <button class="btn-gold" style="background:#e74c3c; color:white; margin-top:auto;" onclick="logout()">خروج من العرين</button>
+        <button class="btn-gold" style="background:#e74c3c; color:white; margin-top:auto;" onclick="logout()">تسجيل خروج من طلبات الشاهين</button>
     </div>
 
     <div id="tab-bar" class="tab-bar">
@@ -200,13 +280,12 @@
 </div>
 
 <script>
-    // --- إعدادات Firebase الخاصة بك ---
     const firebaseConfig = {
         apiKey: "AIzaSyATT9rGsphiw9XjGW-BaE_aVg0O6bGYi14",
         authDomain: "shahen-f31c2.firebaseapp.com",
         databaseURL: "https://shahen-f31c2-default-rtdb.firebaseio.com",
         projectId: "shahen-f31c2",
-        storageBucket: "shahen-f31c2.firebasestorage.app",
+        storageBucket: "shahen-f31c2.appspot.com",
         messagingSenderId: "531429638214",
         appId: "1:531429638214:web:11376d90b1d66c37f14a47",
         measurementId: "G-7V7ELSLC30"
@@ -215,13 +294,26 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
     const rdb = firebase.database();
+    const storage = firebase.storage();
 
-    let data = []; // تم تغييرها من const للسماح بالتحديث السحابي
+    let data = []; 
     let cart = [], currentResId = null, orderHistory = [], cancelInterval = null, isLoginMode = true;
-    let currentOrderKey = null, userLoc = { lat: 0, lng: 0 }; // متغيرات جديدة للموقع والطلب
+    let currentOrderKey = null, userLoc = { lat: 0, lng: 0 }; 
     let profileMap = null, mapMarker = null;
+    let historyTab = 'active'; 
+    let currentRating = 0;
+    let lastStatusNotified = ""; 
 
-    // --- الربط السحابي: سحب المطاعم لحظياً من نفس مسار لوحة القائد ---
+    rdb.ref('sh_settings/promo_text').on('value', (snap) => {
+        const text = snap.val();
+        if(text) {
+            document.getElementById('promo-text').innerText = text;
+            document.getElementById('promo-bar').style.display = 'flex';
+        } else {
+            document.getElementById('promo-bar').style.display = 'flex'; 
+        }
+    });
+
     rdb.ref('sh_restaurants').on('value', (snapshot) => {
         const val = snapshot.val();
         if (val) {
@@ -233,12 +325,18 @@
                 time: val[key].workHours || "30-45 دقيقة",
                 menu: val[key].menu ? (Array.isArray(val[key].menu) ? val[key].menu : Object.values(val[key].menu)).map(m => ({ n: m.itemName, p: parseInt(m.price) || 0, img: m.itemImage || val[key].image })) : []
             }));
-            renderRes(); // تحديث الواجهة فوراً عند أي إضافة من لوحة التحكم
+            renderRes(); 
         } else {
             data = [];
             renderRes();
         }
     });
+
+    function requestPushPermission() {
+        if ('Notification' in window) {
+            Notification.requestPermission();
+        }
+    }
 
     function showNotify(msg, type = 'success') {
         const n = document.getElementById('in-app-notify');
@@ -246,16 +344,36 @@
         document.getElementById('notify-msg').innerText = msg;
         n.className = 'show notify-' + type;
         icon.className = type === 'success' ? 'fas fa-check-circle' : (type === 'error' ? 'fas fa-exclamation-triangle' : 'fas fa-info-circle');
+        
+        if (Notification.permission === "granted") {
+            new Notification("شاهين إكسبريس 🦅", { body: msg, icon: 'https://i.postimg.cc/3RmMjYNd/Whats-App-Image-2026-04-10-at-6-22-30-PM.jpg' });
+        }
+        
         setTimeout(() => n.classList.remove('show'), 3000);
+    }
+
+    function scheduleAutoMessages() {
+        requestPushPermission();
+        const msgs = [
+            "صباح الخير 🌅 جاهز تبدأ يومك؟ صقور الشاهين معك 👌 اطلب أي شي بدك ياه ويوصلك بسرعة البرق 🚀",
+            "🎁 عرض اليوم عند صقور الشاهين! اطلب الآن وخلي طلبك يوصل لعندك بدون تعب 😎 جرب الخدمة وراح تعتمدنا يومياً 💯",
+            "من أسرع توصيل؟ أكيد صقور الشاهين 💪 طلبك علينا… نوصل لك وين ما كنت!",
+            "1️⃣ صقور الشاهين تحلّق في السماء… هل أنت مستعد يكون طلبك بين مخالبها؟ 🦅🔥",
+            "💡 تذكير بسيط: أي طلب بأي وقت… صقور الشاهين جاهز 💙 جربنا مرة… وراح تصير زبون دائم 😉"
+        ];
+        msgs.forEach((m, i) => {
+            setTimeout(() => { if(auth.currentUser) showNotify(m, 'info'); }, (i + 1) * 7200000); 
+            if(i === 0) setTimeout(() => { if(auth.currentUser) showNotify(m, 'info'); }, 5000); 
+        });
     }
 
     function toggleAuthMode() {
         isLoginMode = !isLoginMode;
-        document.getElementById('auth-title').innerText = isLoginMode ? "تسجيل دخول صقر 🦅" : "إنشاء حساب صقر 🦅";
+        document.getElementById('auth-title').innerText = isLoginMode ? "سجل دخولك يا شاهين 🦅" : "إنشاء حساب شاهين 🦅";
         document.getElementById('register-fields').style.display = isLoginMode ? "none" : "block";
         document.getElementById('forgot-pass-link').style.display = isLoginMode ? "block" : "none";
         document.getElementById('auth-btn').innerText = isLoginMode ? "دخول وإرسال رابط التفعيل" : "تسجيل وإرسال رابط التحقق";
-        document.getElementById('toggle-text').innerText = isLoginMode ? "ليس لديك حساب؟ إنشاء حساب" : "لديك حساب بالفعل؟ تسجيل دخول";
+        document.getElementById('toggle-text').innerText = isLoginMode ? "ليس لديك حساب؟ إنشاء حساب" : "لديك حساب بالفعل? تسجيل دخول";
         document.getElementById('auth-btn').setAttribute('onclick', isLoginMode ? 'loginUser()' : 'registerUser()');
     }
 
@@ -265,6 +383,7 @@
         document.getElementById('p-pledge').style.display = 'none';
         document.getElementById('tab-bar').style.display = 'flex';
         renderRes(); nav('p-home');
+        scheduleAutoMessages();
     }
 
     async function registerUser() {
@@ -274,15 +393,15 @@
         const ph = document.getElementById('uPhone').value;
         const addr = document.getElementById('uAddress').value;
         const btn = document.getElementById('auth-btn');
-        if(!n || !e || !p || !ph || !addr) return showNotify("يرجى إكمال كافة الحقول يا صقر", "error");
+        if(!n || !e || !p || !ph || !addr) return showNotify("يرجى إكمال كافة الحقول يا شاهين", "error");
         try {
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التحليق...';
-            // منع التداخل البرمجي أثناء إنشاء الحساب
             const userCredential = await auth.createUserWithEmailAndPassword(e, p);
             await userCredential.user.sendEmailVerification();
-            await db.collection("users").doc(userCredential.user.uid).set({ name: n, phone: ph, email: e, address: addr });
-            showNotify("تم تسجيل عميل جديد لدى صقور الشاهين 🦅", "success");
+            await db.collection("users").doc(userCredential.user.uid).set({ name: n, phone: ph, email: e, address: addr, points: 0 });
+            localStorage.setItem('saved_e', e); localStorage.setItem('saved_p', p);
+            showNotify("تم تسجيل شاهين جديد بنجاح 🦅", "success");
             document.getElementById('login-form-ui').style.display = 'none';
             document.getElementById('verify-wait-ui').style.display = 'block';
             await auth.signOut();
@@ -302,13 +421,14 @@
         const e = document.getElementById('uEmail').value;
         const p = document.getElementById('uPass').value;
         const btn = document.getElementById('auth-btn');
-        if(!e || !p) return showNotify("يرجى إدخال البريد وكلمة السر", "error");
+        if(!e || !p) return showNotify("يرجى إدخل البريد وكلمة السر", "error");
         try {
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التحقق...';
             const userCredential = await auth.signInWithEmailAndPassword(e, p);
             await userCredential.user.reload();
             if (auth.currentUser.emailVerified) {
+                localStorage.removeItem('saved_e'); localStorage.removeItem('saved_p');
                 loadUserData(auth.currentUser.uid);
             } else {
                 showNotify("يرجى تفعيل حسابك من الرابط في الإيميل أولاً", "error");
@@ -319,7 +439,7 @@
         } catch (err) { 
             btn.disabled = false;
             btn.innerText = "دخول وإرسال رابط التفعيل";
-            showNotify("بيانات الدخول غير صحيحة يا صقر", "error"); 
+            showNotify("بيانات الدخول غير صحيحة يا شاهين", "error"); 
         }
     }
 
@@ -350,26 +470,29 @@
         if(mapMarker) profileMap.removeLayer(mapMarker);
         mapMarker = L.marker([lat, lng]).addTo(profileMap);
         profileMap.panTo([lat, lng]);
+        const addrText = `إحداثيات: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+        document.getElementById('my-address').innerText = addrText;
     }
 
     async function saveMapSelection() {
         const user = auth.currentUser;
         if(user && userLoc.lat !== 0) {
-            await db.collection("users").doc(user.uid).update({ lat: userLoc.lat, lng: userLoc.lng });
-            showNotify("تم حفظ موقعك اليدوي بنجاح ✅", "success");
+            const addrText = document.getElementById('my-address').innerText;
+            await db.collection("users").doc(user.uid).update({ lat: userLoc.lat, lng: userLoc.lng, address: addrText });
+            showNotify("تم حفظ موقعك وتحديث العنوان بنجاح ✅", "success");
         } else {
             showNotify("يرجى تحديد نقطة على الخريطة أولاً", "error");
         }
     }
 
     function loadUserData(uid) {
-        // التأكد من وجود صلاحية الوصول لـ Firestore
-        db.collection("users").doc(uid).get().then(doc => {
+        db.collection("users").doc(uid).onSnapshot(doc => {
             if (doc.exists) {
                 const userData = doc.data();
                 document.getElementById('my-name').innerText = userData.name;
                 document.getElementById('my-phone').innerText = userData.phone;
                 document.getElementById('my-address').innerText = userData.address || "غير محدد";
+                document.getElementById('shahen-points').innerText = userData.points || 0;
                 if(userData.lat) {
                     userLoc = { lat: userData.lat, lng: userData.lng };
                 }
@@ -381,14 +504,13 @@
                 } else {
                     document.getElementById('p-pledge').style.display = 'none';
                     document.getElementById('tab-bar').style.display = 'flex';
+                    checkActiveOrderOnLoad(uid); 
                     renderRes(); nav('p-home');
+                    scheduleAutoMessages();
                 }
             } else {
-                showNotify("خطأ: تأكد من تفعيل Firestore في لوحة Firebase", "error");
+                showNotify("خطأ في جلب بيانات المستخدم", "error");
             }
-        }).catch(err => {
-            console.error(err);
-            showNotify("خطأ في جلب البيانات: تحقق من إعدادات Firestore", "error");
         });
     }
 
@@ -401,7 +523,9 @@
                 const lng = position.coords.longitude;
                 updateMarker(lat, lng);
                 if(user) {
-                    await db.collection("users").doc(user.uid).update({ lat, lng });
+                    const addrText = `إحداثيات GPS: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+                    await db.collection("users").doc(user.uid).update({ lat, lng, address: addrText });
+                    document.getElementById('my-address').innerText = addrText;
                     showNotify("تم جلب وتحديث موقعك التلقائي بنجاح ✅", "success");
                 }
             }, (error) => {
@@ -419,20 +543,12 @@
         }
     });
 
-    function logout() { localStorage.removeItem('shahen_pledge'); auth.signOut(); location.reload(); }
+    window.addEventListener('load', () => {
+        if(localStorage.getItem('saved_e')) document.getElementById('uEmail').value = localStorage.getItem('saved_e');
+        if(localStorage.getItem('saved_p')) document.getElementById('uPass').value = localStorage.getItem('saved_p');
+    });
 
-    function login(t) {
-        if(t !== 'dev') {
-            const n = document.getElementById('uName').value;
-            const ph = document.getElementById('uPhone').value;
-            if(!n || !ph) return showNotify("أدخل بياناتك يا صقر", "error");
-            document.getElementById('my-name').innerText = n;
-            document.getElementById('my-phone').innerText = ph;
-        }
-        document.getElementById('p-login').style.display = 'none';
-        document.getElementById('tab-bar').style.display = 'flex';
-        renderRes(); nav('p-home');
-    }
+    function logout() { localStorage.removeItem('shahen_pledge'); auth.signOut(); location.reload(); }
 
     function renderRes() {
         if (data.length === 0) {
@@ -470,7 +586,6 @@
         showNotify("تمت إضافة " + n + " إلى السلة ✅");
     }
 
-    // --- دالة حذف صنف من السلة ---
     function removeFromCart(index) {
         cart.splice(index, 1);
         if(cart.length === 0) currentResId = null;
@@ -481,17 +596,16 @@
     }
 
     function nav(id) {
-        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
+        document.querySelectorAll('.page').forEach(p => { p.classList.remove('active'); p.style.display = 'none'; });
+        const target = document.getElementById(id);
+        target.classList.add('active');
+        target.style.display = 'flex'; 
+        
         document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
-        const titles = document.getElementById(id).getElementsByTagName('h2');
-        if(titles.length > 0) {
-            const activeTab = Array.from(document.querySelectorAll('.tab-item')).find(t => t.innerText.includes(titles[0].innerText.split(' ')[0]));
-            if(activeTab) activeTab.classList.add('active');
-        }
-        if(id === 'p-cart') renderCart();
-        if(id === 'p-history') renderHistory();
-        if(id === 'p-profile') initProfileMap();
+        if(id === 'p-home') document.querySelectorAll('.tab-item')[0].classList.add('active');
+        if(id === 'p-cart') { document.querySelectorAll('.tab-item')[1].classList.add('active'); renderCart(); }
+        if(id === 'p-history') { document.querySelectorAll('.tab-item')[2].classList.add('active'); renderHistory(); }
+        if(id === 'p-profile') { document.querySelectorAll('.tab-item')[3].classList.add('active'); initProfileMap(); }
     }
 
     function renderCart() {
@@ -526,12 +640,17 @@
                 <hr style="border:0; border-top:1px solid #333;">
                 <div style="display:flex; justify-content:space-between; color:var(--gold); font-size:18px; font-weight:bold;"><span>الإجمالي:</span><span>${sub+res.fee} ل.س</span></div>
             </div>
-            <button class="btn-gold" style="margin-top:15px" onclick="confirmOrderStart()">تأكيد الطلب 🦅</button>
+            <button class="btn-gold" id="final-confirm-btn" style="margin-top:15px" onclick="confirmOrderStart()">تأكيد الطلب 🦅</button>
         `;
     }
 
     function confirmOrderStart() {
-        // --- استخدام الإحداثيات المسجلة مسبقاً أو جلبها حالياً ---
+        const confirmBtn = document.getElementById('final-confirm-btn');
+        if(confirmBtn.classList.contains('btn-disabled')) return;
+        confirmBtn.classList.add('btn-disabled'); confirmBtn.innerHTML = "جاري التأكيد...";
+        
+        const sound = document.getElementById('searching-sound');
+        sound.play().catch(e => console.log("Audio waiting..."));
         if (userLoc.lat !== 0) {
             executeOrderSubmission();
         } else if (navigator.geolocation) {
@@ -539,7 +658,6 @@
                 userLoc = { lat: position.coords.latitude, lng: position.coords.longitude };
                 executeOrderSubmission();
             }, (error) => {
-                userLoc = { lat: 0, lng: 0 };
                 executeOrderSubmission();
             });
         } else {
@@ -551,25 +669,27 @@
         const res = data.find(r => r.id === currentResId);
         const sub = cart.reduce((s,i) => s+i.p, 0);
         const notes = document.getElementById('order-notes') ? document.getElementById('order-notes').value : "";
+        const vCode = Math.floor(1000 + Math.random() * 9000);
         const orderData = {
             customer: document.getElementById('my-name').innerText,
             phone: document.getElementById('my-phone').innerText,
-            address: document.getElementById('my-address').innerText, // العنوان اليدوي من البروفايل
+            address: document.getElementById('my-address').innerText,
             res: res.name,
             total: sub + res.fee,
             items: cart,
-            notes: notes, // إضافة الملاحظات للبيانات
+            notes: notes,
             lat: userLoc.lat,
-            lng: userLoc.lng, // الموقع الجغرافي (GPS) لكي يراه المندوب
+            lng: userLoc.lng,
             status: 'searching',
-            date: new Date().toLocaleString('ar-SA')
+            date: new Date().toLocaleString('ar-SA'),
+            clientConfirmed: false,
+            driverDone: false,
+            verifyCode: vCode,
+            customerUID: auth.currentUser.uid 
         };
-        
-        // إرسال الطلب لـ Firebase والحصول على Key لمتابعته
         const newOrderRef = rdb.ref('sh_public_orders').push();
         currentOrderKey = newOrderRef.key;
         newOrderRef.set(orderData);
-
         document.getElementById('eagle-confirm').style.display = 'flex';
         setTimeout(() => {
             document.getElementById('eagle-confirm').style.display = 'none';
@@ -577,70 +697,230 @@
         }, 2000);
     }
 
+    function checkActiveOrderOnLoad(uid) {
+        rdb.ref('sh_public_orders').orderByChild('customerUID').equalTo(uid).once('value', snap => {
+            const orders = snap.val();
+            if(orders) {
+                const keys = Object.keys(orders);
+                const activeKey = keys.find(k => orders[k].status !== 'completed' && !orders[k].clientConfirmed);
+                if(activeKey) {
+                    currentOrderKey = activeKey;
+                    const val = orders[activeKey];
+                    if(val.status === 'searching') {
+                        startSearching();
+                    } else {
+                        document.getElementById('driver-chat-name').innerText = val.driverName || "صقر شاهين";
+                        document.getElementById('driver-chat-id').innerText = `ID: ${val.driverID || "SH-101"}`;
+                        document.getElementById('driver-chat-phone').innerText = `📞 ${val.driverPhone || "---"}`;
+                        document.getElementById('call-driver-btn').onclick = () => { if(val.driverPhone) window.open(`tel:${val.driverPhone}`); };
+                        document.getElementById('rate-driver-name').innerText = val.driverName || "صقر شاهين";
+                        document.getElementById('reveal-order-code').innerText = val.verifyCode;
+                        document.getElementById('client-code-notice').style.display = 'block';
+                        startChatListener(activeKey);
+                        monitorDeliveryStatus(activeKey);
+                        nav('p-chat');
+                    }
+                }
+            }
+        });
+    }
+
     function startSearching() {
+        document.getElementById('searching-sound').play().catch(err => console.log("Sound error"));
         document.getElementById('eagle-searching').style.display = 'flex';
-        let timeLeft = 30; // زيادة الوقت للبحث
+        let timeLeft = 15;
         document.getElementById('cancel-timer').innerText = timeLeft;
         document.getElementById('cancel-btn').style.display = 'block';
-        
-        // مراقبة حالة الطلب في Firebase: لا ينقبل إلا إذا غيره المندوب
         rdb.ref('sh_public_orders/' + currentOrderKey).on('value', (snap) => {
             const val = snap.val();
             if (val && val.status === 'accepted') {
+                document.getElementById('searching-sound').pause();
+                document.getElementById('searching-sound').currentTime = 0;
                 clearInterval(cancelInterval);
-                rdb.ref('sh_public_orders/' + currentOrderKey).off(); // وقف المراقبة
+                rdb.ref('sh_public_orders/' + currentOrderKey).off();
                 document.getElementById('cancel-btn').style.display = 'none';
-                document.getElementById('searching-text').innerText = "تم قبول طلبك من الصقر " + (val.driverName || "أحمد") + "!";
+                
+                document.getElementById('driver-chat-name').innerText = val.driverName || "صقر شاهين";
+                document.getElementById('driver-chat-id').innerText = `ID: ${val.driverID || "SH-101"}`;
+                document.getElementById('driver-chat-phone').innerText = `📞 ${val.driverPhone || "---"}`;
+                document.getElementById('call-driver-btn').onclick = () => { if(val.driverPhone) window.open(`tel:${val.driverPhone}`); };
+                document.getElementById('rate-driver-name').innerText = val.driverName || "صقر شاهين";
+
+                cart = []; currentResId = null;
+                document.getElementById('badge').innerText = 0;
+                document.getElementById('badge').style.display = 'none';
+                
+                startChatListener(currentOrderKey);
+                monitorDeliveryStatus(currentOrderKey);
+
                 setTimeout(() => {
                     document.getElementById('eagle-searching').style.display = 'none';
                     showNotify("🦅 نوفي بعهدكم.. تم قبول الطلب!");
                     nav('p-chat');
-                }, 2000);
+                }, 2500);
             }
         });
-
         cancelInterval = setInterval(() => {
             timeLeft--;
             document.getElementById('cancel-timer').innerText = timeLeft;
-            if (timeLeft <= 0) {
-                clearInterval(cancelInterval);
-                rdb.ref('sh_public_orders/' + currentOrderKey).remove(); // حذف الطلب إذا لم يقبله أحد
-                document.getElementById('eagle-searching').style.display = 'none';
-                showNotify("عذراً، لم يتوفر صقور حالياً.. حاول لاحقاً", "error");
-            }
+            if (timeLeft <= 0) { timeLeft = 15; document.getElementById('cancel-timer').innerText = timeLeft; }
         }, 1000);
     }
 
+    function monitorDeliveryStatus(orderID) {
+        rdb.ref('sh_public_orders/' + orderID).on('value', snap => {
+            const val = snap.val();
+            if(!val) return;
+            
+            if(val.status === 'accepted' && lastStatusNotified === "") {
+                lastStatusNotified = 'accepted';
+                document.getElementById('reveal-order-code').innerText = val.verifyCode;
+                document.getElementById('client-code-notice').style.display = 'block';
+            }
+
+            if(val.status === 'on_way' && lastStatusNotified === 'accepted') {
+                lastStatusNotified = 'on_way';
+                showNotify("صقرنا في الطريق إليك! 🛵", "success");
+            }
+
+            if(val.driverDone && !val.clientConfirmed) {
+                document.getElementById('delivery-confirm-box').style.display = 'block';
+                if(!document.getElementById('p-chat').classList.contains('active')) {
+                   showNotify("🦅 صقرنا وصل! تحقق من الدردشة لتأكيد الاستلام", "info");
+                }
+            } else if (val.status === 'completed' || val.clientConfirmed) {
+                document.getElementById('delivery-confirm-box').style.display = 'none';
+                document.getElementById('client-code-notice').style.display = 'none'; 
+                if(currentOrderKey) finishOrder();
+            }
+        });
+    }
+
+    function showVerifyCodeToClient() {
+        rdb.ref('sh_public_orders/' + currentOrderKey).once('value', snap => {
+            const val = snap.val();
+            if(val && val.verifyCode) {
+                document.getElementById('client-reveal-code').innerText = val.verifyCode;
+                document.getElementById('rating-overlay').style.display = 'flex';
+                document.getElementById('delivery-confirm-box').style.display = 'none';
+                document.getElementById('client-code-notice').style.display = 'none';
+            }
+        });
+    }
+
+    function setStars(s) {
+        currentRating = s;
+        const stars = document.getElementById('main-rating-stars').getElementsByTagName('i');
+        for(let i=0; i<5; i++) {
+            stars[i].className = i < s ? 'fas fa-star star-active' : 'fas fa-star';
+        }
+    }
+
+    async function submitMandatoryRating() {
+        if(currentRating === 0) return showNotify("يرجى تقييم صقرنا أولاً ✨", "error");
+        const rateBtn = document.getElementById('final-rate-btn');
+        rateBtn.classList.add('btn-disabled');
+        await rdb.ref('sh_public_orders/' + currentOrderKey).update({ 
+            clientConfirmed: true, 
+            rating: currentRating,
+            status: 'completed'
+        });
+        showNotify("تم إرسال تقييمك بنجاح.. يرجى إعطاء الكود للمندوب لإتمام الإغلاق", "success");
+        document.getElementById('rating-overlay').style.display = 'none';
+        currentRating = 0; finishOrder();
+    }
+
     function cancelOrder() {
+        document.getElementById('searching-sound').pause();
+        document.getElementById('searching-sound').currentTime = 0;
         clearInterval(cancelInterval);
         if (currentOrderKey) rdb.ref('sh_public_orders/' + currentOrderKey).remove();
         document.getElementById('eagle-searching').style.display = 'none';
+        const confirmBtn = document.getElementById('final-confirm-btn');
+        if(confirmBtn) { confirmBtn.classList.remove('btn-disabled'); confirmBtn.innerHTML = "تأكيد الطلب 🦅"; }
         showNotify("تم إلغاء الطلب بنجاح", "info");
     }
 
+    function switchHistoryTab(tab) {
+        historyTab = tab;
+        document.getElementById('tab-active').classList.toggle('active', tab === 'active');
+        document.getElementById('tab-past').classList.toggle('active', tab === 'past');
+        renderHistory();
+    }
+
     function finishOrder() {
-        const res = data.find(r => r.id === currentResId);
-        const sub = cart.reduce((s,i) => s+i.p, 0);
-        orderHistory.unshift({ resName: res.name, total: sub + res.fee, date: new Date().toLocaleString('ar-SA') });
-        cart=[]; currentResId=null; document.getElementById('badge').style.display='none';
-        showNotify("تم توصيل الطلب بنجاح! نوفي بعهدكم 🦅");
-        nav('p-history');
+        rdb.ref('sh_public_orders/' + currentOrderKey).once('value', snap => {
+            const val = snap.val();
+            if(val) {
+                orderHistory.unshift({ 
+                    resName: val.res, 
+                    total: val.total, 
+                    date: val.date,
+                    status: 'delivered',
+                    driverName: val.driverName || "صقر",
+                    userRating: val.rating || 5
+                });
+            }
+            const oldKey = currentOrderKey; currentOrderKey = null;
+            lastStatusNotified = ""; 
+            rdb.ref('sh_chats/' + oldKey).off();
+            rdb.ref('sh_public_orders/' + oldKey).off();
+            document.getElementById('delivery-confirm-box').style.display = 'none';
+            document.getElementById('client-code-notice').style.display = 'none';
+            showNotify("تم توصيل الطلب بنجاح! نوفي بعهدكم 🦅");
+            switchHistoryTab('past'); nav('p-history');
+        });
     }
 
-    function renderHistory() {
-        const cont = document.getElementById('history-content');
-        if(orderHistory.length === 0) { cont.innerHTML = "<p style='text-align:center;'>لا يوجد طلبات سابقة</p>"; return; }
-        cont.innerHTML = orderHistory.map(o => `
-            <div class="card" style="border-right: 4px solid var(--gold);">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <div><b>${o.resName}</b><br><small>${o.date}</small></div>
-                    <b style="color:var(--gold)">${o.total} ل.س</b>
-                </div>
-            </div>
-        `).join('');
+    function startChatListener(orderID) {
+        rdb.ref('sh_chats/' + orderID).on('value', snap => {
+            const chatBox = document.getElementById('chat-box');
+            chatBox.innerHTML = "";
+            const messages = snap.val();
+            if (messages) {
+                Object.values(messages).forEach(msg => {
+                    const isMe = msg.sender === 'client';
+                    const msgDiv = document.createElement('div');
+                    msgDiv.className = `chat-msg ${isMe ? 'chat-out' : 'chat-in'}`;
+                    if(msg.type === 'image') {
+                        msgDiv.innerHTML = `<img src="${msg.url}" class="chat-img" onclick="window.open('${msg.url}')">`;
+                    } else {
+                        msgDiv.innerText = msg.text;
+                    }
+                    chatBox.appendChild(msgDiv);
+                });
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
+        });
     }
 
-    function sendMsg() { const i = document.getElementById('m-inp'); if(!i.value) return; document.getElementById('chat-box').innerHTML += `<div class="chat-msg chat-out">${i.value}</div>`; i.value=""; }
+    function sendMsg() { 
+        const i = document.getElementById('m-inp'); 
+        if(!i.value || !currentOrderKey) return; 
+        rdb.ref('sh_chats/' + currentOrderKey).push({
+            sender: 'client',
+            text: i.value,
+            time: Date.now(),
+            type: 'text'
+        });
+        i.value=""; 
+    }
+
+    async function uploadChatImg(input) {
+        if(!input.files || !input.files[0] || !currentOrderKey) return;
+        const file = input.files[0];
+        const fileName = `chat_${currentOrderKey}_${Date.now()}.jpg`;
+        const storageRef = storage.ref(`chat_images/${fileName}`);
+        showNotify("جاري إرسال الصورة... 🦅", "info");
+        try {
+            const snapshot = await storageRef.put(file);
+            const url = await snapshot.ref.getDownloadURL();
+            rdb.ref('sh_chats/' + currentOrderKey).push({ sender: 'client', url: url, time: Date.now(), type: 'image' });
+            showNotify("تم إرسال الصورة بنجاح ✅");
+        } catch (e) {
+            showNotify("فشل في رفع الصورة، تأكد من إعدادات الاستضافة", "error");
+        }
+    }
 
     function searchRes() {
         const query = document.getElementById('resSearch').value.toLowerCase();
@@ -648,7 +928,6 @@
             card.style.display = card.querySelector('.res-name').innerText.toLowerCase().includes(query) ? 'block' : 'none';
         });
     }
-
     function searchMenu() {
         const query = document.getElementById('menuSearch').value.toLowerCase();
         document.querySelectorAll('.menu-card').forEach(card => {
