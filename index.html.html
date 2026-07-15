@@ -539,7 +539,14 @@
         });
         _voiceLocalStream.getTracks().forEach(track => _voicePeerConnection.addTrack(track, _voiceLocalStream));
         _voicePeerConnection.ontrack = (event) => {
-            document.getElementById('voice-remote-audio').srcObject = event.streams[0];
+            const _audioEl = document.getElementById('voice-remote-audio');
+            _audioEl.srcObject = event.streams[0];
+            // [FIX-NO-AUDIO] بعض المتصفحات تمنع تشغيل الصوت تلقائياً حتى لو الاتصال نجح — نجبر
+            // التشغيل صراحة، ونطلب من الصيدلي التفاعل يدوياً لو استمر المنع
+            _audioEl.play().catch(() => {
+                showToast('⚠️ اضغط على الشاشة لتفعيل صوت المكالمة');
+                document.addEventListener('click', () => _audioEl.play().catch(()=>{}), { once: true });
+            });
             document.getElementById('voice-call-status').innerText = '🟢 المكالمة جارية';
             document.getElementById('voice-call-timer').style.display = 'block';
             _voiceCallStartTime = Date.now();
