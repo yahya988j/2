@@ -3,1088 +3,646 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <!-- [SEC-PATCH-17] رؤوس أمان إضافية -->
-    <meta http-equiv="X-Content-Type-Options" content="nosniff">
-    <meta name="referrer" content="no-referrer">
-    <title>بوابة صيدلية شاهين | الأرباح والاستشارات 🏥</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <title>حسابات</title>
+    
+    <!-- إعدادات الـ PWA خاصة بـ iOS -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="حسابات">
+    <meta name="theme-color" content="#0f172a">
+    
+    <!-- أيقونة الـ Apple Touch المضمنة (تظهر عند إضافته للشاشة الرئيسية) -->
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 512 512%22><rect width=%22512%22 height=%22512%22 rx=%22115%22 fill=%22%230f172a%22/><path d=%22M256 90C164.3 90 90 164.3 90 256s74.3 166 166 166 166-74.3 166-166S347.7 90 256 90zm0 290c-68.4 0-124-55.6-124-124s55.6-124 124-124 124 55.6 124 124-55.6 124-124 124z%22 fill=%22%2338bdf8%22/><path d=%22M256 160c-53 0-96 43-96 96s43 96 96 96 96-43 96-96-43-96-96-96zm0 150c-30.3 0-55-24.7-55-55s24.7-55 55-55 55 24.7 55 55-24.7 55-55 55z%22 fill=%22%2334d399%22/><text x=%2250%25%22 y=%2253%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-size=%22140%22 font-family=%22Arial%22 font-weight=%22bold%22 fill=%22%23ffffff%22>💰</text></svg>">
+
+    <!-- ربط ملف الـ Manifest الديناميكي -->
+    <link rel="manifest" id="dynamic-manifest">
+
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
     <style>
-        :root { --gold: #d4af37; --p-dark: #0a010a; --p-main: #1d051d; --glass: rgba(255, 255, 255, 0.05); --success: #27ae60; --danger: #e74c3c; --info: #3498db; }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { margin: 0; background: #000; color: #fff; font-family: sans-serif; overflow-x: hidden; min-height: 100vh; display: flex; justify-content: center; align-items: center; }
-        /* [FIX-MOBILE-FRAME] على الشاشات الكبيرة (كمبيوتر)، يظهر التطبيق بعرض هاتف حقيقي بالمنتصف
-           بدل ما يمتد ليملأ الشاشة كاملة — بينما على الجوال الفعلي يبقى بملء الشاشة تلقائياً */
-        #app-container { position: relative; overflow: hidden; background: radial-gradient(circle, var(--p-main), var(--p-dark)); width: 100%; max-width: 430px; height: 100vh; max-height: 932px; margin: auto; border: 1px solid rgba(212,175,55,0.2); display: flex; flex-direction: column; }
-        @media (min-width: 431px) {
-            #app-container { height: 90vh; border-radius: 28px; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --card-border: #334155;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #38bdf8;
+            --accent-gradient: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
+            --success: #34d399;
+            --danger: #f87171;
+            --radius: 20px;
         }
-        
-        .view-controls { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); z-index: 10000; display: flex; gap: 10px; background: rgba(0,0,0,0.6); padding: 8px 15px; border-radius: 50px; border: 1px solid var(--gold); backdrop-filter: blur(5px); }
-        .view-btn { width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; cursor: pointer; background: var(--glass); color: #fff; border: 1px solid rgba(255,255,255,0.1); border-radius: 50%; }
-        
-        .auth-overlay { position: fixed; inset: 0; background: var(--p-dark); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; }
-        .auth-card { background: var(--glass); backdrop-filter: blur(10px); padding: 30px; border-radius: 20px; border: 1px solid var(--gold); width: 100%; max-width: 400px; text-align: center; }
-        input { width: 100%; padding: 15px; margin-bottom: 15px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: #fff; text-align: center; outline: none; }
-        .btn-login { width: 100%; padding: 15px; background: var(--gold); border: none; border-radius: 12px; font-weight: bold; cursor: pointer; }
-        .side-menu-item { display: flex; align-items: center; gap: 10px; width: 100%; text-align: right; background: none; border: none; color: #fff; padding: 12px 6px; font-size: 13px; cursor: pointer; border-radius: 8px; }
-        .side-menu-item:active { background: rgba(255,255,255,0.08); }
-        .side-menu-item i { width: 18px; color: var(--gold); }
-        
-        header { padding: 60px 20px 15px; background: var(--glass); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); flex-shrink: 0; }
-        .res-name { font-weight: bold; color: var(--gold); }
-        
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px; flex-shrink: 0; }
-        .stat-card { background: var(--glass); padding: 12px; border-radius: 12px; border-right: 3px solid var(--gold); cursor: pointer; }
-        .stat-val { font-size: 20px; font-weight: bold; margin-top: 5px; }
 
-        .history-report { padding: 0 15px 15px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-        .h-box { background: rgba(255,255,255,0.03); padding: 8px; border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.05); cursor: pointer; }
-        .h-box b { font-size: 14px; color: var(--gold); }
-        .p-box { margin-top: 4px; font-size: 9px; color: var(--success); }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Tajawal', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
 
-        #orders-list { padding: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; overflow-y: auto; flex: 1; padding-bottom: 30px; align-content: start; }
-        .order-card { background: var(--glass); border-radius: 15px; padding: 12px; border: 1px solid rgba(255,255,255,0.1); position: relative; display: flex; flex-direction: column; justify-content: space-between; height: fit-content; transition: 0.3s; }
-        
-        .status-new { border-color: var(--gold); }
-        .status-active { border-color: var(--info); box-shadow: 0 0 10px rgba(52, 152, 219, 0.2); }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            padding: 16px;
+            padding-env: env(safe-area-inset-bottom);
+            display: flex;
+            justify-content: center;
+        }
 
-        .btn-act { padding: 8px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; width: 100%; margin-top: 8px; font-size: 11px; }
-        .btn-accept { background: var(--success); color: #fff; }
-        .btn-follow { background: var(--info); color: #fff; }
+        .container {
+            width: 100%;
+            max-width: 480px;
+            margin: 0 auto;
+        }
 
-        #report-modal { display: none; position: absolute; inset: 0; background: var(--p-dark); z-index: 3000; flex-direction: column; }
-        .modal-header { padding: 15px; background: var(--glass); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--gold); }
-        .report-list { flex: 1; overflow-y: auto; padding: 15px; }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-top: 10px;
+        }
 
-        #active-chat-box { display: none; position: absolute; inset: 0; background: var(--p-dark); z-index: 2000; flex-direction: column; }
-        .chat-header { padding: 15px; background: var(--glass); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(212,175,55,0.3); }
-        .chat-messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 800px; margin: 0 auto; }
-        .msg { max-width: 85%; padding: 10px 15px; border-radius: 15px; font-size: 14px; word-break: break-word; }
-        .msg.store { background: var(--gold); color: #000; align-self: flex-end; border-bottom-right-radius: 2px; }
-        .msg.client { background: #333; color: #fff; align-self: flex-start; border-bottom-left-radius: 2px; }
-        
-        .chat-input-area { padding: 15px; display: flex; gap: 10px; background: var(--glass); border-top: 1px solid rgba(255,255,255,0.1); width: 100%; max-width: 800px; margin: 0 auto; }
-        .chat-input-area input { margin: 0; flex: 1; padding: 12px; border-radius: 10px; background: rgba(0,0,0,0.2); border: 1px solid #333; color: #fff; }
-        .btn-finish { background: var(--info); color: #fff; border: none; border-radius: 12px; padding: 14px; font-weight: bold; cursor: pointer; margin: 0 auto 5px; width: calc(100% - 30px); max-width: 770px; font-size: 14px; }
-        .btn-cancel-chat { background: rgba(255,255,255,0.1); color: var(--danger); border: 1px solid var(--danger); border-radius: 12px; padding: 10px; font-weight: bold; cursor: pointer; margin: 0 auto 15px; width: calc(100% - 30px); max-width: 770px; font-size: 12px; }
+        header h1 {
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
 
-        #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: var(--gold); color: #000; padding: 10px 20px; border-radius: 20px; font-size: 13px; font-weight: bold; display: none; z-index: 9999; }
-        .sync-loader { position: fixed; top: 0; left: 0; height: 3px; background: var(--gold); z-index: 9999; transition: width 0.1s linear; }
-        .empty-state { text-align: center; opacity: 0.3; margin-top: 50px; grid-column: span 2; }
+        .settings-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-muted);
+            padding: 8px 14px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: 0.2s;
+        }
 
-        #order-details-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 5000; align-items: center; justify-content: center; padding: 20px; }
-        .details-card { background: var(--p-main); border: 2px solid var(--gold); padding: 20px; border-radius: 20px; width: 100%; max-width: 400px; }
-        .details-card textarea { width: 100%; height: 120px; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; padding: 10px; margin: 10px 0; resize: none; font-family: sans-serif; font-size: 14px; }
-        .total-box { background: rgba(212,175,55,0.1); border: 1px dashed var(--gold); border-radius: 10px; padding: 10px; text-align: center; margin-bottom: 15px; }
+        .settings-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* البطاقات */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 14px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .main-card {
+            background: var(--accent-gradient);
+            border: none;
+            color: #fff;
+            text-align: center;
+            padding: 28px 20px;
+        }
+
+        .main-card .label {
+            font-size: 0.95rem;
+            opacity: 0.9;
+            margin-bottom: 6px;
+        }
+
+        .main-card .value {
+            font-size: 2.5rem;
+            font-weight: 800;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-bottom: 14px;
+        }
+
+        .mini-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius);
+            padding: 16px;
+            text-align: center;
+        }
+
+        .mini-card .label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .mini-card .value {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        /* زر الإضافة */
+        .add-btn {
+            width: 100%;
+            background: #fff;
+            color: var(--bg-color);
+            border: none;
+            padding: 16px;
+            border-radius: var(--radius);
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
+        }
+
+        .add-btn:active {
+            transform: scale(0.98);
+        }
+
+        /* سجل الدفعات */
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: var(--text-muted);
+        }
+
+        .payments-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 40px;
+        }
+
+        .payment-item {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            padding: 14px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .payment-info .amount {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--success);
+            margin-bottom: 2px;
+        }
+
+        .payment-info .note {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .payment-info .date {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            opacity: 0.8;
+        }
+
+        .payment-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .action-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.1rem;
+            padding: 4px;
+        }
+
+        .delete-btn { color: var(--danger); }
+        .edit-btn { color: var(--accent); }
+
+        /* النوافذ المنبثقة */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            justify-content: center;
+            align-items: flex-end;
+            z-index: 100;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 480px;
+            border-top-left-radius: 24px;
+            border-top-right-radius: 24px;
+            padding: 24px;
+            border-top: 1px solid var(--card-border);
+            animation: slideUp 0.3s ease;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h3 {
+            font-size: 1.2rem;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .form-control {
+            width: 100%;
+            background: var(--bg-color);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 12px 16px;
+            color: var(--text-main);
+            font-size: 1rem;
+            outline: none;
+        }
+
+        .form-control:focus {
+            border-color: var(--accent);
+        }
+
+        .save-btn {
+            width: 100%;
+            background: var(--accent-gradient);
+            color: #fff;
+            border: none;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 30px 0;
+            font-size: 0.9rem;
+        }
     </style>
 </head>
-<body onclick="initAudio()">
+<body>
 
-
-<div id="app-container">
-    <div class="sync-loader" id="sync-bar"></div>
-    <div id="toast"></div>
-
-    <div id="auth-screen" class="auth-overlay">
-        <div class="auth-card">
-            <img src="https://i.postimg.cc/QxzPkmPf/Whats-App-Image-2026-04-10-at-6-22-30-PM-t7edrz.jpg" width="80" style="border-radius:20px; margin-bottom:15px;">
-            <h2 style="color:var(--gold);">بوابة الصيدليات</h2>
-            <input type="email" id="login-email" placeholder="البريد الإلكتروني">
-            <input type="password" id="login-code" placeholder="كود التفعيل">
-            <button class="btn-login" onclick="checkAuth()">دخول المناوبة</button>
-        </div>
-    </div>
-
-    <div id="main-content" style="display:none; flex-direction:column; height:100vh;">
+    <div class="container">
+        <!-- الهيدر -->
         <header>
-            <button onclick="openSideMenu()" style="background:none; border:none; color:#fff; font-size:20px;"><i class="fas fa-bars"></i></button>
-            <div class="res-name" id="display-res-name">اسم الصيدلية</div>
-            <button onclick="openShiftModal()" id="shift-icon-btn" style="background:none; border:none; color:#888; font-size:18px; position:relative;" title="المناوبة">
-                <i class="fas fa-clock"></i>
-                <span id="shift-active-dot" style="display:none; position:absolute; top:-2px; left:-2px; width:8px; height:8px; background:var(--success); border-radius:50%;"></span>
-            </button>
+            <h1 id="person-title">حسابات</h1>
+            <button class="settings-btn" onclick="openSettings()">الإعدادات ⚙️</button>
         </header>
 
-        <!-- [FEATURE-SIDE-MENU] قائمة جانبية موحّدة — تجمع كل الإعدادات والأقسام بمكان واحد -->
-        <div id="side-menu-overlay" onclick="if(event.target===this) closeSideMenu()" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:7000;">
-            <div id="side-menu-panel" style="position:absolute; top:0; right:0; width:78%; max-width:300px; height:100%; background:var(--p-main); border-left:1px solid rgba(212,175,55,0.3); padding:20px 16px; overflow-y:auto;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                    <b style="color:var(--gold); font-size:15px;"><i class="fas fa-store"></i> <span id="side-menu-name">الصيدلية</span></b>
-                    <button onclick="closeSideMenu()" style="background:none; border:none; color:#fff; font-size:18px;"><i class="fas fa-times"></i></button>
+        <!-- 1. البطاقة الرئيسية: إجمالي المبلغ -->
+        <div class="card main-card">
+            <div class="label">إجمالي المبلغ المحفوظ</div>
+            <div class="value" id="total-amount">0 <span style="font-size: 1.2rem;">ر.س</span></div>
+        </div>
+
+        <!-- 2 و 3. بطاقات تفصيلية -->
+        <div class="grid-2">
+            <div class="mini-card">
+                <div class="label">المتبقي لرمضان</div>
+                <div class="value" id="days-to-ramadan">-- يوم</div>
+            </div>
+            <div class="mini-card">
+                <div class="label">الهدف في رمضان</div>
+                <div class="value" id="target-display">0 <span style="font-size: 0.8rem;">ر.س</span></div>
+            </div>
+        </div>
+
+        <!-- 4. المتبقي للوصول للهدف -->
+        <div class="card mini-card" style="margin-bottom: 14px;">
+            <div class="label">المتبقي للوصول للهدف</div>
+            <div class="value" id="remaining-to-target" style="color: var(--accent);">0 ر.س</div>
+        </div>
+
+        <!-- 5. الربح والمتوقع -->
+        <div id="profit-section" style="display: none;">
+            <div class="grid-2">
+                <div class="mini-card">
+                    <div class="label">الربح المتوقع</div>
+                    <div class="value" id="expected-profit" style="color: var(--success);">0 ر.س</div>
                 </div>
-                <button onclick="closeSideMenu();" class="side-menu-item"><i class="fas fa-comment-medical"></i> الاستشارات الحالية</button>
-                <button onclick="closeSideMenu(); openReportModal('day');" class="side-menu-item"><i class="fas fa-history"></i> الاستشارات السابقة</button>
-                <button onclick="closeSideMenu(); openShiftModal();" class="side-menu-item"><i class="fas fa-clock"></i> المناوبة</button>
-                <button onclick="closeSideMenu(); openLocationModal();" class="side-menu-item"><i class="fas fa-map-marker-alt"></i> موقع الصيدلية</button>
-                <button onclick="closeSideMenu(); openPharmacyInfoModal();" class="side-menu-item"><i class="fas fa-store"></i> بيانات الصيدلية</button>
-                <div style="border-top:1px solid rgba(255,255,255,0.1); margin:14px 0;"></div>
-                <button onclick="logout()" class="side-menu-item" style="color:var(--danger);"><i class="fas fa-power-off"></i> تسجيل الخروج</button>
-            </div>
-        </div>
-
-        <div class="stats-grid">
-            <div class="stat-card"><span>استشارات قادمة</span><div id="stat-count" class="stat-val">0</div></div>
-            <div class="stat-card" onclick="openReportModal('day')"><span>أرباح اليوم</span><div id="today-profit" class="stat-val" style="color:var(--info);">0</div></div>
-        </div>
-
-        <div class="history-report">
-            <div class="h-box" onclick="openReportModal('day')"><span>اليوم</span><b id="report-day">0</b><div class="p-box" id="p-day">0</div></div>
-            <div class="h-box" onclick="openReportModal('week')"><span>الأسبوع</span><b id="report-week">0</b><div class="p-box" id="p-week">0</div></div>
-            <div class="h-box" onclick="openReportModal('month')"><span>الشهر</span><b id="report-month">0</b><div class="p-box" id="p-month">0</div></div>
-        </div>
-
-        <div id="orders-list"></div>
-    </div>
-
-    <div id="report-modal">
-        <div class="modal-header">
-            <b id="report-title">الأرشيف</b>
-            <button onclick="closeReportModal()" style="background:none; border:none; color:#fff; font-size:20px;"><i class="fas fa-times"></i></button>
-        </div>
-        <div class="report-list" id="report-items-container"></div>
-    </div>
-
-    <!-- [FEATURE-CONSULT-REDESIGN] استبدال الدردشة بالكامل بشاشة مراجعة الاستشارة -->
-    <div id="active-chat-box">
-        <div class="chat-header">
-            <div>
-                <div id="client-name-chat" style="font-weight:bold; font-size:16px;">...</div>
-                <div id="active-order-id" style="font-size:10px; opacity:0.6;">...</div>
-            </div>
-            <button onclick="closeChat()" style="background:none; border:none; color:#fff; font-size:22px;"><i class="fas fa-times"></i></button>
-        </div>
-        <div style="flex:1; overflow-y:auto; padding:16px;">
-            <div id="consult-type-badge" style="text-align:center; margin-bottom:14px;"></div>
-            <div style="background:var(--glass); border-radius:12px; padding:14px; margin-bottom:14px;">
-                <div style="font-size:11px; color:var(--gold); margin-bottom:6px;"><i class="fas fa-file-medical"></i> وصف الحالة من العميل</div>
-                <div id="consult-description" style="font-size:13px; line-height:1.8; white-space:pre-line;"></div>
-            </div>
-            <div id="consult-images-wrap" style="margin-bottom:14px;">
-                <div style="font-size:11px; color:var(--gold); margin-bottom:8px;"><i class="fas fa-images"></i> الصور المرفقة</div>
-                <div id="consult-images" style="display:grid; grid-template-columns:1fr 1fr; gap:8px;"></div>
-            </div>
-            <!-- [FEATURE-VOICE-CONSULT] منطقة الاتصال الصوتي — تظهر فقط للاستشارات الصوتية -->
-            <div id="voice-call-area" style="display:none; background:rgba(212,175,55,0.08); border:1px solid var(--gold); border-radius:14px; padding:16px; text-align:center; margin-bottom:14px;">
-                <!-- [FEATURE-CALL-RECORDING] إشعار تسجيل صريح — إلزامي قانونياً قبل أي تسجيل -->
-                <div style="background:rgba(231,76,60,0.1); border:1px solid #e74c3c; border-radius:10px; padding:8px; margin-bottom:12px; font-size:10px; color:#e74c3c;">
-                    <i class="fas fa-circle" style="font-size:6px;"></i> هذه المكالمة مسجَّلة لدى شركة شاهين إكسبريس لأغراض الجودة والسلامة
+                <div class="mini-card">
+                    <div class="label">المبلغ النهائي المتوقع</div>
+                    <div class="value" id="final-expected-amount">0 ر.س</div>
                 </div>
-                <div id="voice-call-status" style="font-size:13px; color:var(--gold); margin-bottom:10px;">جاهز لبدء المكالمة</div>
-                <div id="voice-call-timer" style="font-size:22px; font-weight:bold; margin-bottom:10px; display:none;">00:00</div>
-                <audio id="voice-remote-audio" autoplay style="display:none;"></audio>
-                <button id="voice-call-btn" onclick="startVoiceCall()" style="width:100%; padding:14px; background:var(--success); color:#fff; border:none; border-radius:12px; font-weight:bold; cursor:pointer;"><i class="fas fa-phone"></i> بدء الاتصال الصوتي</button>
-                <button id="voice-end-btn" onclick="endVoiceCall()" style="display:none; width:100%; padding:14px; background:var(--danger); color:#fff; border:none; border-radius:12px; font-weight:bold; cursor:pointer; margin-top:8px;"><i class="fas fa-phone-slash"></i> إنهاء المكالمة</button>
             </div>
         </div>
-        <button class="btn-finish" onclick="showDetailsBox()">اقتراح الأدوية للمريض 💊</button>
-        <button class="btn-cancel-chat" onclick="cancelDueToNoResponse()">إلغاء الاستشارة (عدم رد العميل) ⏳</button>
+
+        <!-- زر إضافة دفعة -->
+        <button class="add-btn" onclick="openAddModal()">+ إضافة دفعة جديدة</button>
+
+        <!-- سجل الدفعات -->
+        <div class="section-title">سجل الدفعات</div>
+        <div class="payments-list" id="payments-list"></div>
     </div>
 
-    <!-- [FEATURE-MED-SUGGEST] قائمة أدوية مقترحة منظّمة — بدل نص حر واحد -->
-    <div id="order-details-modal">
-        <div class="details-card" style="max-height:85vh; overflow-y:auto;">
-            <h3 style="color:var(--gold); margin:0 0 10px 0; font-size:16px;">💊 اقتراح الأدوية للمريض</h3>
-            <p style="font-size:11px; opacity:0.8; margin-bottom:10px;">أضف كل دواء لحاله مع الكمية والملاحظات — العميل يشوفهم ويقرر الطلب</p>
-            <div id="med-items-list" style="margin-bottom:10px;"></div>
-            <button onclick="addMedItemRow()" style="width:100%; padding:10px; background:rgba(212,175,55,0.12); color:var(--gold); border:1px solid var(--gold); border-radius:10px; margin-bottom:14px; cursor:pointer;"><i class="fas fa-plus"></i> إضافة دواء</button>
-            <div class="total-box">
-                <span style="font-size: 12px; opacity: 0.8;">إجمالي قيمة الأدوية المقترحة:</span><br>
-                <b id="live-total-price" style="font-size: 20px; color: var(--gold);">0</b> <small>ل.س</small>
+    <!-- نافذة إضافة / تعديل دفعة -->
+    <div class="modal" id="payment-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">إضافة دفعة جديدة</h3>
+                <button class="close-modal" onclick="closePaymentModal()">&times;</button>
             </div>
-            <label style="font-size:11px; color:#aaa; display:block; margin-bottom:4px;">ملاحظات عامة (اختياري)</label>
-            <textarea id="consult-general-notes" style="height:60px;" placeholder="أي ملاحظات إضافية للمريض..."></textarea>
-            <div style="display:flex; gap:10px; margin-top:10px;">
-                <button onclick="completeConsultation()" class="btn-login" style="flex:2;">تأكيد وإرسال للعميل</button>
-                <button onclick="document.getElementById('order-details-modal').style.display='none'" style="flex:1; background:var(--glass); color:#fff; border:1px solid #555; border-radius:12px; cursor:pointer;">إلغاء</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- [FEATURE-SHIFT-MODAL] المناوبة: بداية/نهاية + تفعيل استقبال الطلبات -->
-    <div id="shift-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:6000; align-items:center; justify-content:center; padding:20px;">
-        <div class="details-card" style="max-width:380px; max-height:85vh; overflow-y:auto;">
-            <h3 style="color:var(--gold); margin:0 0 14px; font-size:16px;"><i class="fas fa-clock"></i> سجل المناوبة</h3>
-            <div id="shift-status-display" style="text-align:center; margin-bottom:16px; font-size:13px; color:#ccc; background:var(--glass); border-radius:10px; padding:12px;"></div>
-            <button id="shift-toggle-btn" onclick="toggleShift()" class="btn-login" style="margin-bottom:16px;">بدء المناوبة</button>
-
-            <!-- [FEATURE-SCHEDULE-FUTURE-SHIFT] جدولة مناوبة مستقبلية (تاريخ محدَّد + وقت البداية والنهاية) -->
-            <div style="border-top:1px solid rgba(255,255,255,0.1); padding-top:14px; margin-bottom:14px;">
-                <div style="font-size:12px; color:var(--gold); margin-bottom:8px;"><i class="fas fa-calendar-plus"></i> جدولة مناوبة مستقبلية</div>
-                <label style="font-size:11px; color:#aaa; display:block; margin-bottom:4px;">التاريخ</label>
-                <input type="date" id="sched-shift-date" style="margin-bottom:8px;">
-                <div style="display:flex; gap:6px; margin-bottom:8px;">
-                    <div style="flex:1;">
-                        <label style="font-size:11px; color:#aaa; display:block; margin-bottom:4px;">من الساعة</label>
-                        <input type="time" id="sched-shift-start">
-                    </div>
-                    <div style="flex:1;">
-                        <label style="font-size:11px; color:#aaa; display:block; margin-bottom:4px;">حتى الساعة</label>
-                        <input type="time" id="sched-shift-end">
-                    </div>
+            <form id="payment-form" onsubmit="savePayment(event)">
+                <input type="hidden" id="payment-id">
+                <div class="form-group">
+                    <label>مبلغ الدفعة (ر.س)</label>
+                    <input type="number" step="any" id="pay-amount" class="form-control" required placeholder="أدخل المبلغ">
                 </div>
-                <button onclick="scheduleFutureShift()" style="width:100%; padding:11px; background:rgba(212,175,55,0.15); color:var(--gold); border:1px solid var(--gold); border-radius:10px; font-weight:bold; cursor:pointer;"><i class="fas fa-plus"></i> إضافة للجدول</button>
+                <div class="form-group">
+                    <label>تاريخ الدفعة</label>
+                    <input type="date" id="pay-date" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>ملاحظة (اختيارية)</label>
+                    <input type="text" id="pay-note" class="form-control" placeholder="مثل: دفعة شهر أغسطس">
+                </div>
+                <button type="submit" class="save-btn">حفظ الدفعة</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- نافذة الإعدادات -->
+    <div class="modal" id="settings-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>إعدادات الاتفاق</h3>
+                <button class="close-modal" onclick="closeSettings()">&times;</button>
             </div>
-
-            <div style="font-size:12px; color:var(--gold); margin-bottom:8px;"><i class="fas fa-calendar-check"></i> المناوبات المجدولة القادمة</div>
-            <div id="scheduled-shifts-list" style="margin-bottom:14px;"></div>
-
-            <div style="font-size:12px; color:var(--gold); margin-bottom:8px;"><i class="fas fa-list"></i> المناوبات السابقة</div>
-            <div id="shift-history-list" style="margin-bottom:14px;"></div>
-            <button onclick="document.getElementById('shift-modal').style.display='none'" style="width:100%; background:var(--glass); color:#fff; border:1px solid #555; border-radius:12px; padding:12px; cursor:pointer;">إغلاق</button>
+            <form id="settings-form" onsubmit="saveSettings(event)">
+                <div class="form-group">
+                    <label>اسم الشخص</label>
+                    <input type="text" id="set-person" class="form-control" placeholder="اسم الشخص المسؤول عن المبلغ">
+                </div>
+                <div class="form-group">
+                    <label>المبلغ المستهدف في رمضان (ر.س)</label>
+                    <input type="number" id="set-target" class="form-control" placeholder="المبلغ المستهدف">
+                </div>
+                <div class="form-group">
+                    <label>قيمة أو نسبة الربح المتفق عليها (اختياري)</label>
+                    <input type="text" id="set-profit" class="form-control" placeholder="مثال: 10% أو 500">
+                </div>
+                <button type="submit" class="save-btn">حفظ الإعدادات</button>
+            </form>
         </div>
     </div>
 
-    <!-- [FEATURE-LOCATION-MODAL] تحديد/تعديل موقع الصيدلية -->
-    <div id="location-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:6000; align-items:center; justify-content:center; padding:20px;">
-        <div class="details-card" style="max-width:360px;">
-            <h3 style="color:var(--gold); margin:0 0 10px; font-size:16px;"><i class="fas fa-map-marker-alt"></i> موقع الصيدلية</h3>
-            <p style="font-size:11px; opacity:0.8; margin-bottom:10px;">استخدم موقعك الحالي لتحديد موقع الصيدلية بدقة</p>
-            <button onclick="useCurrentLocationForPharmacy()" style="width:100%; padding:12px; background:var(--info); color:#fff; border:none; border-radius:12px; font-weight:bold; margin-bottom:10px; cursor:pointer;"><i class="fas fa-location-crosshairs"></i> استخدم موقعي الحالي</button>
-            <div id="location-status-text" style="text-align:center; font-size:12px; color:#ccc; margin-bottom:10px;"></div>
-            <button onclick="document.getElementById('location-modal').style.display='none'" style="width:100%; background:var(--glass); color:#fff; border:1px solid #555; border-radius:12px; padding:12px; cursor:pointer;">إغلاق</button>
-        </div>
-    </div>
-
-    <!-- [FEATURE-PHARMACY-INFO-MODAL] بيانات الصيدلية -->
-    <div id="pharmacy-info-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:6000; align-items:center; justify-content:center; padding:20px;">
-        <div class="details-card" style="max-width:360px;">
-            <h3 style="color:var(--gold); margin:0 0 14px; font-size:16px;"><i class="fas fa-store"></i> بيانات الصيدلية</h3>
-            <label style="font-size:11px; color:#aaa; display:block; margin-bottom:4px;">اسم الصيدلية</label>
-            <input type="text" id="ph-info-name" style="margin-bottom:12px;">
-            <label style="font-size:11px; color:#aaa; display:block; margin-bottom:4px;">اسم المسؤول</label>
-            <input type="text" id="ph-info-manager" style="margin-bottom:12px;">
-            <label style="font-size:11px; color:#aaa; display:block; margin-bottom:4px;">وقت بداية الدوام</label>
-            <input type="text" id="ph-info-open" placeholder="مثال: 08:00" style="margin-bottom:12px;">
-            <label style="font-size:11px; color:#aaa; display:block; margin-bottom:4px;">وقت نهاية الدوام</label>
-            <input type="text" id="ph-info-close" placeholder="مثال: 22:00" style="margin-bottom:12px;">
-            <button onclick="savePharmacyInfo()" class="btn-login" style="margin-bottom:10px;">حفظ التعديلات</button>
-            <button onclick="document.getElementById('pharmacy-info-modal').style.display='none'" style="width:100%; background:var(--glass); color:#fff; border:1px solid #555; border-radius:12px; padding:12px; cursor:pointer;">إغلاق</button>
-        </div>
-    </div>
-
-</div>
-
-<script>
-    const _sb = supabase.createClient('https://qfyggwffibmrlsvlzwgs.supabase.co', 'sb_publishable_FIh2oKce-lHn0BVQgHWE1Q_erut1cMR');
-    // [SEC-FIX-GEN1] XSS Prevention
-    function escHtml(str) {
-        if (str === null || str === undefined) return '';
-        return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-    }
-    let currentRes = null;
-    let lastCount = 0;
-    let refreshTimer = 0;
-    let activeOrderId = null;
-    let chatChannel = null;
-    let statusChannel = null;
-    let msgIds = new Set();
-    let historyOrders = [];
-    let currentActiveOrders = []; 
-    const sound = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-    // تعديل: متغير لـ polling الرسائل الاحتياطي في حال الـ Realtime لم يشتغل
-    let _msgPollInterval = null;
-
-    function initAudio() { sound.play().then(() => { sound.pause(); sound.currentTime = 0; }).catch(() => {}); }
-
-    function setVSize(type) {
-        const container = document.getElementById('app-container');
-        if(type === 'mobile') { container.style.width = '375px'; container.style.height = '667px'; }
-        else if(type === 'tablet') { container.style.width = '768px'; container.style.height = '1024px'; }
-        else { container.style.width = '100vw'; container.style.height = '100vh'; }
-    }
-
-    // [SEC-FIX-BF] حماية من هجمات القوة الغاشمة على تسجيل الدخول
-    // [SEC-PATCH-9] استرجاع حالة القفل من sessionStorage لمنع إعادة التشغيل من إلغاء الحظر
-    let _loginAttempts = parseInt(sessionStorage.getItem('_ph_attempts') || '0');
-    let _loginLockUntil = parseInt(sessionStorage.getItem('_ph_lock_until') || '0');
-
-    async function checkAuth() {
-        const _now = Date.now();
-        if (_now < _loginLockUntil) {
-            showToast("⛔ محظور مؤقتاً. انتظر " + Math.ceil((_loginLockUntil - _now) / 1000) + " ثانية");
-            return;
-        }
-        // [SEC-FIX-TRIM] تنظيف المدخلات من المسافات الزائدة
-        const email = document.getElementById('login-email').value.trim().toLowerCase();
-        const code = document.getElementById('login-code').value.trim();
-        if (!email || !code) { showToast("يرجى إدخال جميع البيانات"); return; }
-        // [SEC-FIX-PHARMACY-LOGIN-RPC] استخدام دالة آمنة بدل القراءة المباشرة لجدول pharmacies —
-        // كانت تكشف access_code (بيانات الدخول) لأي طلب anon يعرف الإيميل فقط، نفس ثغرة المطاعم سابقاً
-        const { data: rpcRows, error: loginErr } = await _sb.rpc('pharmacy_login_check', { p_email: email, p_access_code: code });
-        const data = rpcRows && rpcRows.length > 0 ? rpcRows[0] : null;
-        if (data) {
-            _loginAttempts = 0;
-            sessionStorage.removeItem('_ph_attempts');
-            sessionStorage.removeItem('_ph_lock_until');
-            currentRes = data;
-            // [SEC-FIX-SESSION] لا نخزّن access_code أو email في localStorage — بيانات حساسة
-            // [SEC-PATCH-25] إضافة timestamp للجلسة للتحقق من الصلاحية (24 ساعة)
-            localStorage.setItem('sh_ph_session', JSON.stringify({ id: data.id, name: data.name, access_code: code, pickup_lat: data.pickup_lat, pickup_lng: data.pickup_lng, manager_name: data.manager_name, open_time: data.open_time, close_time: data.close_time, is_open: data.is_open, _ts: Date.now() }));
-            startApp();
-        } else {
-            _loginAttempts++;
-            sessionStorage.setItem('_ph_attempts', _loginAttempts);
-            if (_loginAttempts >= 5) {
-                _loginLockUntil = Date.now() + 60000;
-                sessionStorage.setItem('_ph_lock_until', _loginLockUntil);
-                _loginAttempts = 0;
-                sessionStorage.setItem('_ph_attempts', '0');
-            }
-            showToast("بيانات الدخول غير صحيحة ❌");
-        }
-    }
-
-    // [FIX-INTERVAL] مرجع عالمي للمؤقت الرئيسي لمنع التكديس عند إعادة استدعاء startApp
-    let _mainRefreshInterval = null;
-
-    // [FEATURE-CONSULT-REDESIGN] استماع لحظي لإشعارات تأكيد الطلبات (جدول notifications)
-    let _notifChannel = null;
-    function _startNotificationListener() {
-        if (!currentRes) return;
-        if (_notifChannel) { try { _sb.removeChannel(_notifChannel); } catch(e){} }
-        _notifChannel = _sb.channel('ph_notif_' + currentRes.id)
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, (payload) => {
-                if (String(payload.new.user_id) !== String(currentRes.id)) return;
-                showToast('🔔 ' + payload.new.message);
-                try { sound.play().catch(()=>{}); } catch(e){}
-                loadOrders(); loadHistory();
-            }).subscribe();
-    }
-
-    function startApp() {
-        const session = localStorage.getItem('sh_ph_session');
-        // [SEC-PATCH-25] التحقق من صحة الجلسة وانتهاء صلاحيتها (24 ساعة)
-        if (session) {
-            try {
-                const parsed = JSON.parse(session);
-                const _SESSION_TTL = 24 * 60 * 60 * 1000;
-                if (parsed._ts && (Date.now() - parsed._ts) > _SESSION_TTL) {
-                    localStorage.removeItem('sh_ph_session');
-                    return;
+    <script>
+        // إنشاء ملف Manifest ديناميكياً لضمان التعرف التام كـ PWA على آيفون
+        const manifestData = {
+            "name": "حسابات",
+            "short_name": "حسابات",
+            "start_url": "./",
+            "display": "standalone",
+            "background_color": "#0f172a",
+            "theme_color": "#0f172a",
+            "icons": [
+                {
+                    "src": "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 512 512%22><rect width=%22512%22 height=%22512%22 rx=%22115%22 fill=%22%230f172a%22/><text x=%2250%25%22 y=%2253%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-size=%22140%22 font-family=%22Arial%22 font-weight=%22bold%22 fill=%22%23ffffff%22>💰</text></svg>",
+                    "sizes": "512x512",
+                    "type": "image/svg+xml"
                 }
-                currentRes = parsed;
-            } catch(e) { localStorage.removeItem('sh_ph_session'); return; }
-        }
-        document.getElementById('auth-screen').style.display = 'none';
-        document.getElementById('main-content').style.display = 'flex';
-        document.getElementById('display-res-name').innerText = currentRes.name;
-        loadOrders(true);
-        loadHistory();
-        // [FEATURE-SHIFT] مزامنة نقطة حالة المناوبة مع الحالة المحفوظة
-        const _shiftActive = localStorage.getItem('sh_ph_shift_active') === '1';
-        document.getElementById('shift-active-dot').style.display = _shiftActive ? 'block' : 'none';
-        // [FEATURE-SHIFT-LOG] استعادة معرّف سجل المناوبة الحالية بعد إعادة تحميل الصفحة
-        _currentShiftLogId = localStorage.getItem('sh_ph_current_shift_log_id') || null;
-        // [FEATURE-CONSULT-REDESIGN] الاستماع اللحظي لإشعارات تأكيد الطلب من العميل
-        _startNotificationListener();
-        // [FIX-INTERVAL] إيقاف أي مؤقت سابق قبل إنشاء مؤقت جديد
-        if (_mainRefreshInterval) clearInterval(_mainRefreshInterval);
-        _mainRefreshInterval = setInterval(() => {
-            refreshTimer += 33.4;
-            document.getElementById('sync-bar').style.width = refreshTimer + "%";
-            if (refreshTimer >= 100) { refreshTimer = 0; loadOrders(); loadHistory(); }
-        }, 1000);
-    }
+            ]
+        };
+        const stringManifest = JSON.stringify(manifestData);
+        const blob = new Blob([stringManifest], {type: 'application/json'});
+        document.getElementById('dynamic-manifest').setAttribute('href', URL.createObjectURL(blob));
 
-    async function loadHistory() {
-        if(!currentRes) return;
-        const today = new Date(); today.setHours(0,0,0,0);
-        // [FIX-HISTORY] إضافة فلترة الأسبوع والشهر التي كانت مفقودة
-        const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);
-        const monthAgo = new Date(); monthAgo.setDate(monthAgo.getDate() - 30);
-        // [PERF-PATCH-2] تحديد الأعمدة المطلوبة فقط + فلترة بتاريخ الشهر لمنع جلب كل التاريخ
-        const { data: all } = await _sb.from('sh_public_orders')
-            .select('id,created_at,consultation_fee,status,pharmacy_earning,order_details,customer_name')
-            .eq('pharmacy_id', currentRes.id)
-            .eq('status', 'completed_consultation')
-            .gte('created_at', monthAgo.toISOString());
-        if(all) {
-            historyOrders = all;
-            const d = all.filter(o => new Date(o.created_at) >= today);
-            const w = all.filter(o => new Date(o.created_at) >= weekAgo);
-            const m = all;
-            // [FEATURE-PROFIT-SPLIT] عرض حصة الصيدلية الفعلية بعد التوزيع، لا رسوم الاستشارة كاملة
-            const calcProfit = (list) => list.reduce((sum, o) => sum + (o.pharmacy_earning != null ? Number(o.pharmacy_earning) : (Number(o.consultation_fee) || 0)), 0);
-            document.getElementById('today-profit').innerText = calcProfit(d).toLocaleString();
-            document.getElementById('report-day').innerText = d.length;
-            document.getElementById('p-day').innerText = calcProfit(d).toLocaleString();
-            // [FIX-HISTORY] تعبئة إحصائيات الأسبوع والشهر (كانت دائماً صفر)
-            document.getElementById('report-week').innerText = w.length;
-            document.getElementById('p-week').innerText = calcProfit(w).toLocaleString();
-            document.getElementById('report-month').innerText = m.length;
-            document.getElementById('p-month').innerText = calcProfit(m).toLocaleString();
-        }
-    }
-
-    async function loadOrders(isFirst = false) {
-        if (!currentRes) return;
-        // [SEC-FIX-FILTER] إضافة فلتر من جهة السيرفر لمنع جلب طلبات صيدليات أخرى
-        const { data: orders } = await _sb.from('sh_public_orders')
-            .select('*')
-            .eq('res_type', 'pharmacy')
-            .in('status', ['searching', 'consulting', 'accepted'])
-            .or(`pharmacy_id.eq.${currentRes.id},target_pharmacy.eq.${currentRes.name}`)
-            .order('created_at', { ascending: false });
+        // نظام الحفظ المزدوج (LocalStorage + Backup حماية تامة للبيانات)
+        const STORAGE_KEY = 'hesabat_app_data_v1';
         
-        currentActiveOrders = (orders || []).filter(o => 
-            (o.target_pharmacy === currentRes.name || Number(o.pharmacy_id) === Number(currentRes.id)) && 
-            o.status !== 'completed_consultation' &&
-            !o.pharmacy_order_acknowledged
-        );
-
-        if (!isFirst && currentActiveOrders.length > lastCount) { sound.play().catch(() => {}); showToast("استشارة جديدة 🏥"); }
-        lastCount = currentActiveOrders.length;
-        document.getElementById('stat-count').innerText = currentActiveOrders.length;
-        renderOrders(currentActiveOrders);
-    }
-
-    function renderOrders(orders) {
-        const list = document.getElementById('orders-list');
-        if (orders.length === 0) { list.innerHTML = `<div class="empty-state"><i class="fas fa-check-circle"></i><p>الواجهة صافية.. لا توجد استشارات نشطة</p></div>`; return; }
-        list.innerHTML = orders.map(o => {
-            // [FEATURE-VOICE-REDESIGN] استشارة صوتية جديدة لم يُقبَل بعد — بطاقة "قبول/رفض" فقط،
-            // بدون أي زر اتصال أو شاشة انتظار وسيطة. القبول = فتح المكالمة تلقائياً فوراً
-            if (o.consultation_type === 'voice' && !o.pharmacist_assigned && o.status !== 'cancelled' && o.status !== 'completed_consultation') {
-                return `
-                <div class="order-card status-new" id="card-${escHtml(String(o.id))}" style="border-color:var(--info);">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <div style="font-size:9px; opacity:0.6;">#${escHtml(String(o.id).slice(-4))}</div>
-                        <span style="background:rgba(52,152,219,0.15); color:var(--info); font-size:8px; padding:2px 6px; border-radius:5px; font-weight:bold;"><i class="fas fa-phone"></i> استشارة صوتية</span>
-                    </div>
-                    <div style="font-weight:bold; font-size:13px; margin:5px 0;">${escHtml(o.customer_name || 'عميل')}</div>
-                    <div style="display:flex; gap:6px;">
-                        <button class="btn-act" style="flex:1; background:rgba(231,76,60,0.15); color:#e74c3c; border:1px solid #e74c3c;" onclick="rejectVoiceConsultation('${escHtml(String(o.id))}')">رفض</button>
-                        <button class="btn-act" style="flex:2; background:#2ecc71; color:#fff; border:none;" onclick="acceptVoiceConsultation('${escHtml(String(o.id))}')">قبول</button>
-                    </div>
-                </div>`;
-            }
-            // [FIX-ORDER-SHOWN-AS-CONSULT] طلب أكّده العميل فعلياً (وافق على الأدوية المقترحة)
-            // يجب أن يظهر كـ"طلب مؤكَّد قيد التجهيز"، لا كاستشارة جديدة تحتاج قبولاً من جديد
-            if (o.customer_med_decision === 'ordered') {
-                return `
-                <div class="order-card" style="border-color:#2ecc71;" id="card-${escHtml(String(o.id))}">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <div style="font-size:9px; opacity:0.6;">#${escHtml(String(o.id).slice(-4))}</div>
-                        <span style="background:rgba(46,204,113,0.15); color:#2ecc71; font-size:8px; padding:2px 6px; border-radius:5px; font-weight:bold;">✅ تم الطلب</span>
-                    </div>
-                    <div style="font-weight:bold; font-size:13px; margin:5px 0;">${escHtml(o.customer_name || 'عميل')}</div>
-                    <div style="font-size:10px; color:#aaa; margin-bottom:8px;">وافق العميل — جاري تجهيز الطلب للمندوب</div>
-                    <button class="btn-act" style="background:rgba(212,175,55,0.15); color:var(--gold); border:1px solid var(--gold);" onclick="acknowledgeOrderPrepared('${escHtml(String(o.id))}')">تم التجهيز ✔️</button>
-                </div>`;
-            }
-            return `
-            <div class="order-card ${o.status === 'consulting' || o.status === 'accepted' ? 'status-active' : 'status-new'}" id="card-${escHtml(String(o.id))}">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <div style="font-size:9px; opacity:0.6;">#${escHtml(String(o.id).slice(-4))}</div>
-                    <div style="font-size:12px;">${o.consultation_type === 'voice' ? '<i class="fas fa-phone" style="color:var(--info);" title="استشارة صوتية"></i>' : '<i class="fas fa-file-medical-alt" style="color:#9b59b6;" title="استشارة بدون اتصال"></i>'}</div>
-                </div>
-                <div style="font-weight:bold; font-size:13px; margin:5px 0;">${escHtml(o.customer_name || 'عميل')}</div>
-                <button class="btn-act ${o.status === 'consulting' || o.status === 'accepted' ? 'btn-follow' : 'btn-accept'}" onclick="openChat('${escHtml(String(o.id))}')">
-                    ${o.status === 'consulting' || o.status === 'accepted' ? 'متابعة الاستشارة' : 'قبول الاستشارة'}
-                </button>
-            </div>`;
-        }).join('');
-    }
-
-    // [FIX-ORDER-SHOWN-AS-CONSULT] الصيدلي يعلّم الطلب "تم تجهيزه" — لا يمس status إطلاقاً
-    // (المسؤول عن حالة التوصيل والمندوب)، فقط يخفيه من قائمة الصيدلية النشطة
-    // [FEATURE-VOICE-REDESIGN] قبول استشارة صوتية — حجز ذرّي (يمنع أكثر من جهاز/موظف بنفس
-    // الصيدلية من قبولها بنفس الوقت)، ثم فتح المكالمة وبدء الاتصال تلقائياً فوراً كطرف بادئ
-    async function acceptVoiceConsultation(orderId) {
-        // [SEC] تحديث شرطي: ينجح فقط لو لسا ما حد قبلها (pharmacist_assigned لسا false/null) —
-        // يحل مشكلة تعدد الأجهزة بنفس حساب الصيدلية بشكل آمن دون حاجة لقفل قاعدة بيانات معقّد
-        const { data: claimed, error } = await _sb.from('sh_public_orders')
-            .update({ pharmacist_assigned: true, status: 'accepted', pharmacy_id: currentRes.id, restaurant_name: currentRes.name })
-            .eq('id', orderId)
-            .or('pharmacist_assigned.is.null,pharmacist_assigned.eq.false')
-            .select();
-        if (error) { showToast('⚠️ خطأ: ' + error.message); return; }
-        if (!claimed || claimed.length === 0) {
-            showToast('⚠️ تم قبول هذه الاستشارة من جهاز آخر بالفعل');
-            loadOrders();
-            return;
-        }
-        showToast('✅ تم القبول — جاري فتح المكالمة...');
-        activeOrderId = orderId;
-        await openChat(orderId);
-        // [FEATURE-VOICE-REDESIGN] بدء الاتصال تلقائياً فوراً — الصيدلي هو الطرف البادئ بالاتصال
-        // (Offer)، والعميل يستقبل ويتصل تلقائياً بدون أي زر من طرفه
-        await _startPharmacyOutgoingCall(orderId);
-    }
-
-    async function rejectVoiceConsultation(orderId) {
-        // [FEATURE-VOICE-REDESIGN] الرفض لا يلغي الطلب نهائياً — يبقى معروضاً لباقي الصيادلة
-        // (أو لباقي الأجهزة بنفس حساب الصيدلية) حتى يقبله أحد، مطابقةً للمطلوب بالضبط
-        currentActiveOrders = currentActiveOrders.filter(o => String(o.id) !== String(orderId));
-        renderOrders(currentActiveOrders);
-        showToast('تم تجاهل الاستشارة');
-    }
-
-    // [FEATURE-VOICE-REDESIGN] الصيدلي يبدأ الاتصال تلقائياً فور القبول (بدل انتظار العميل يتصل)
-    async function _startPharmacyOutgoingCall(orderId) {
-        try {
-            document.getElementById('voice-call-status').innerText = 'جاري طلب إذن الميكروفون...';
-            _voiceLocalStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        } catch(e) {
-            showToast('⚠️ يرجى السماح باستخدام الميكروفون لبدء المكالمة');
-            return;
-        }
-        document.getElementById('voice-call-btn').style.display = 'none';
-        document.getElementById('voice-end-btn').style.display = 'block';
-        document.getElementById('voice-call-status').innerText = 'جاري الاتصال بالعميل...';
-
-        _voicePeerConnection = new RTCPeerConnection({
-            iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }]
-        });
-        _voiceLocalStream.getTracks().forEach(track => _voicePeerConnection.addTrack(track, _voiceLocalStream));
-        _voicePeerConnection.ontrack = (event) => {
-            const _audioEl = document.getElementById('voice-remote-audio');
-            _audioEl.srcObject = event.streams[0];
-            // [FIX-NO-AUDIO] بعض المتصفحات تمنع تشغيل الصوت تلقائياً حتى لو الاتصال نجح — نجبر
-            // التشغيل صراحة، ونطلب من الصيدلي التفاعل يدوياً لو استمر المنع
-            _audioEl.play().catch(() => {
-                showToast('⚠️ اضغط على الشاشة لتفعيل صوت المكالمة');
-                document.addEventListener('click', () => _audioEl.play().catch(()=>{}), { once: true });
-            });
-            document.getElementById('voice-call-status').innerText = '🟢 المكالمة جارية';
-            document.getElementById('voice-call-timer').style.display = 'block';
-            _voiceCallStartTime = Date.now();
-            _voiceCallTimerInterval = setInterval(() => {
-                const sec = Math.floor((Date.now() - _voiceCallStartTime) / 1000);
-                document.getElementById('voice-call-timer').innerText = String(Math.floor(sec/60)).padStart(2,'0') + ':' + String(sec%60).padStart(2,'0');
-            }, 1000);
-            _startCallRecording(event.streams[0]);
+        let db = {
+            person: "",
+            target: 0,
+            profit: "",
+            payments: []
         };
 
-        _voiceSignalChannel = _sb.channel('voice_signal_' + orderId);
-        _voicePeerConnection.onicecandidate = (event) => {
-            if (event.candidate) _voiceSignalChannel.send({ type: 'broadcast', event: 'ice-candidate', payload: { candidate: event.candidate, from: 'pharmacy' } });
-        };
-        _voiceSignalChannel
-            .on('broadcast', { event: 'answer' }, async ({ payload }) => {
-                if (payload.from !== 'customer') return;
-                await _voicePeerConnection.setRemoteDescription(new RTCSessionDescription(payload.answer));
-            })
-            .on('broadcast', { event: 'ice-candidate' }, async ({ payload }) => {
-                if (payload.from !== 'customer') return;
-                try { await _voicePeerConnection.addIceCandidate(new RTCIceCandidate(payload.candidate)); } catch(e) {}
-            })
-            .subscribe(async (status) => {
-                if (status === 'SUBSCRIBED') {
-                    const offer = await _voicePeerConnection.createOffer();
-                    await _voicePeerConnection.setLocalDescription(offer);
-                    _voiceSignalChannel.send({ type: 'broadcast', event: 'offer', payload: { offer, from: 'pharmacy' } });
+        function loadData() {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    db = JSON.parse(saved);
                 }
+            } catch (e) {
+                console.error("خطأ في استرجاع البيانات:", e);
+            }
+        }
+
+        function saveData() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+                // نسخة احتياطية ثانية تلقائية لضمان عدم الضياع نهائياً
+                sessionStorage.setItem(STORAGE_KEY + '_backup', JSON.stringify(db));
+                render();
+            } catch (e) {
+                alert("تعذر الحفظ، يرجى التأكد من مساحة التخزين على الجهاز.");
+            }
+        }
+
+        loadData();
+
+        // حساب الأيام المتبقية لرمضان القادم (رمضان 1448 هـ / فبراير 2027)
+        function calculateDaysToRamadan() {
+            const ramadanDate = new Date('2027-02-08');
+            const today = new Date();
+            const diffTime = ramadanDate - today;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            return diffDays > 0 ? diffDays : 0;
+        }
+
+        // رسم الواجهة وتحديث الأرقام فورياً
+        function render() {
+            // العنوان
+            document.getElementById('person-title').innerText = db.person ? `حسابات: ${db.person}` : "حسابات";
+
+            // إجمالي الدفعات
+            let total = db.payments.reduce((sum, item) => sum + Number(item.amount), 0);
+            document.getElementById('total-amount').innerHTML = `${total.toLocaleString()} <span style="font-size: 1.2rem;">ر.س</span>`;
+
+            // المتبقي لرمضان
+            document.getElementById('days-to-ramadan').innerText = `${calculateDaysToRamadan()} يوم`;
+
+            // الهدف
+            let target = Number(db.target) || 0;
+            document.getElementById('target-display').innerHTML = `${target.toLocaleString()} <span style="font-size: 0.8rem;">ر.س</span>`;
+
+            // المتبقي للهدف
+            let remaining = target - total;
+            document.getElementById('remaining-to-target').innerText = `${remaining > 0 ? remaining.toLocaleString() : 0} ر.س`;
+
+            // الربح المتوقع
+            const profitSection = document.getElementById('profit-section');
+            if (db.profit && db.profit.trim() !== "") {
+                profitSection.style.display = 'block';
+                let calculatedProfit = 0;
+                if (db.profit.includes('%')) {
+                    let percentage = parseFloat(db.profit.replace('%', ''));
+                    calculatedProfit = total * (percentage / 100);
+                } else {
+                    calculatedProfit = parseFloat(db.profit) || 0;
+                }
+                document.getElementById('expected-profit').innerText = `${calculatedProfit.toLocaleString()} ر.س`;
+                document.getElementById('final-expected-amount').innerText = `${(total + calculatedProfit).toLocaleString()} ر.س`;
+            } else {
+                profitSection.style.display = 'none';
+            }
+
+            // قائمة الدفعات
+            const listEl = document.getElementById('payments-list');
+            listEl.innerHTML = '';
+
+            if (!db.payments || db.payments.length === 0) {
+                listEl.innerHTML = `<div class="empty-state">لا توجد دفعات مسجلة حتى الآن</div>`;
+                return;
+            }
+
+            let sortedPayments = [...db.payments].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            sortedPayments.forEach((p) => {
+                let formattedDate = new Date(p.date).toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' });
+                let itemHTML = `
+                    <div class="payment-item">
+                        <div class="payment-info">
+                            <div class="amount">${Number(p.amount).toLocaleString()} ر.س</div>
+                            <div class="note">${p.note || 'بدون ملاحظة'}</div>
+                            <div class="date">${formattedDate}</div>
+                        </div>
+                        <div class="payment-actions">
+                            <button class="action-btn edit-btn" onclick="editPayment('${p.id}')">✏️</button>
+                            <button class="action-btn delete-btn" onclick="deletePayment('${p.id}')">🗑️</button>
+                        </div>
+                    </div>
+                `;
+                listEl.innerHTML += itemHTML;
             });
-    }
+        }
 
-    async function acknowledgeOrderPrepared(orderId) {
-        const { error } = await _sb.from('sh_public_orders').update({ pharmacy_order_acknowledged: true }).eq('id', orderId);
-        if (error) { showToast('⚠️ خطأ: ' + error.message); return; }
-        currentActiveOrders = currentActiveOrders.filter(o => String(o.id) !== String(orderId));
-        renderOrders(currentActiveOrders);
-        showToast('✅ تم — الطلب جاهز لاستلام المندوب');
-    }
+        // النوافذ المنبثقة
+        function openAddModal() {
+            document.getElementById('modal-title').innerText = "إضافة دفعة جديدة";
+            document.getElementById('payment-id').value = '';
+            document.getElementById('pay-amount').value = '';
+            document.getElementById('pay-note').value = '';
+            document.getElementById('pay-date').value = new Date().toISOString().split('T')[0];
+            document.getElementById('payment-modal').classList.add('active');
+        }
 
-    // [FEATURE-CONSULT-REDESIGN] عرض تفاصيل الاستشارة (وصف + صور) بدل الدردشة — نفس قيم الحالة
-    // بالضبط (accepted/completed_consultation/cancelled) لعدم المساس بمنطق الطلبات القائم
-    async function openChat(orderId) {
-        activeOrderId = isNaN(orderId) ? String(orderId) : Number(orderId);
-        // نفس التحديث بالضبط كما كان — لا تغيير على منطق الحالة
-        await _sb.from('sh_public_orders').update({ status: 'accepted', pharmacy_id: currentRes.id, restaurant_name: currentRes.name }).eq('id', activeOrderId);
-        document.getElementById('active-chat-box').style.display = 'flex';
+        function closePaymentModal() {
+            document.getElementById('payment-modal').classList.remove('active');
+        }
 
-        if (statusChannel) _sb.removeChannel(statusChannel);
-        statusChannel = _sb.channel('st_' + activeOrderId).on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'sh_public_orders', filter: `id=eq.${activeOrderId}` }, p => {
-            if (p.new.status === 'completed_consultation' || p.new.status === 'cancelled') { closeChat(); }
-        }).subscribe();
+        function openSettings() {
+            document.getElementById('set-person').value = db.person || '';
+            document.getElementById('set-target').value = db.target || '';
+            document.getElementById('set-profit').value = db.profit || '';
+            document.getElementById('settings-modal').classList.add('active');
+        }
 
-        const { data: order } = await _sb.from('sh_public_orders').select('*').eq('id', activeOrderId).single();
-        document.getElementById('client-name-chat').innerText = order?.customer_name || 'عميل شاهين';
-        document.getElementById('active-order-id').innerText = "#" + activeOrderId;
-        document.getElementById('consult-description').innerText = order?.problem_description || 'لم يكتب العميل وصفاً';
+        function closeSettings() {
+            document.getElementById('settings-modal').classList.remove('active');
+        }
 
-        // [FEATURE-CONSULT-REDESIGN] عرض الصور المرفقة إن وُجدت
-        let images = [];
-        try { images = order?.attached_images ? (typeof order.attached_images === 'string' ? JSON.parse(order.attached_images) : order.attached_images) : []; } catch(e) { images = []; }
-        const imgWrap = document.getElementById('consult-images-wrap');
-        const imgList = document.getElementById('consult-images');
-        if (images.length > 0) {
-            imgWrap.style.display = 'block';
-            imgList.innerHTML = images.map(url => `<img src="${escHtml(url)}" style="width:100%; border-radius:10px; object-fit:cover; height:120px; cursor:pointer;" onclick="window.open('${escHtml(url)}','_blank')">`).join('');
-        } else { imgWrap.style.display = 'none'; }
+        // العمليات (حفظ، تعديل، حذف)
+        function savePayment(e) {
+            e.preventDefault();
+            let id = document.getElementById('payment-id').value;
+            let amount = document.getElementById('pay-amount').value;
+            let date = document.getElementById('pay-date').value;
+            let note = document.getElementById('pay-note').value;
 
-        // [FEATURE-VOICE-CONSULT] إظهار منطقة الاتصال فقط لو نوع الاستشارة صوتي
-        const isVoice = order?.consultation_type === 'voice';
-        document.getElementById('voice-call-area').style.display = isVoice ? 'block' : 'none';
-        if (isVoice) {
-            // [FEATURE-VOICE-REDESIGN] المكالمة تبدأ تلقائياً فور القبول عبر acceptVoiceConsultation
-            // — هذا المكان بس لعرض الحالة أثناء/بعد المكالمة، لا لبدء أي استماع أو اتصال جديد
-            const inCall = _voicePeerConnection && activeOrderId === orderId;
-            if (!inCall) {
-                document.getElementById('voice-call-btn').style.display = 'none';
-                document.getElementById('voice-end-btn').style.display = 'none';
-                document.getElementById('voice-call-status').innerText = order.call_duration_seconds ? '✅ انتهت المكالمة' : 'جاري الاتصال...';
+            if (id) {
+                let p = db.payments.find(item => item.id == id);
+                if (p) {
+                    p.amount = amount;
+                    p.date = date;
+                    p.note = note;
+                }
+            } else {
+                let newPayment = {
+                    id: Date.now().toString(),
+                    amount: amount,
+                    date: date,
+                    note: note
+                };
+                if (!db.payments) db.payments = [];
+                db.payments.push(newPayment);
+            }
+
+            saveData();
+            closePaymentModal();
+        }
+
+        function editPayment(id) {
+            let p = db.payments.find(item => item.id == id);
+            if (p) {
+                document.getElementById('modal-title').innerText = "تعديل الدفعة";
+                document.getElementById('payment-id').value = p.id;
+                document.getElementById('pay-amount').value = p.amount;
+                document.getElementById('pay-date').value = p.date;
+                document.getElementById('pay-note').value = p.note || '';
+                document.getElementById('payment-modal').classList.add('active');
             }
         }
-        const badge = document.getElementById('consult-type-badge');
-        badge.innerHTML = isVoice
-            ? '<span style="background:rgba(52,152,219,0.15); color:var(--info); border:1px solid var(--info); font-size:11px; padding:4px 12px; border-radius:10px;"><i class="fas fa-phone"></i> استشارة صوتية</span>'
-            : '<span style="background:rgba(155,89,182,0.15); color:#9b59b6; border:1px solid #9b59b6; font-size:11px; padding:4px 12px; border-radius:10px;"><i class="fas fa-file-medical-alt"></i> استشارة بدون اتصال</span>';
-    }
 
-    // ============================================================================
-    // [FEATURE-VOICE-CONSULT] اتصال صوتي داخل المنصة عبر WebRTC — بدون أرقام هواتف،
-    // وبدون أي خدمة خارجية مدفوعة. التنسيق (Signaling) يتم عبر قناة Realtime بقاعدة
-    // البيانات نفسها (نفس تقنية التحديثات اللحظية المستخدمة بباقي النظام).
-    // ⚠️ ملاحظة صادقة: هذا تنفيذ أولي يعتمد على خوادم STUN عامة مجانية لعبور الشبكات (NAT) —
-    // يعمل بشكل موثوق على أغلب الشبكات العادية، لكن بعض الشبكات المقيّدة جداً (شركات/مؤسسات)
-    // قد تحتاج خادم TURN مخصصاً لضمان نجاح الاتصال دائماً — هذا يحتاج قرار وتكلفة منفصلة لاحقاً.
-    // ============================================================================
-    let _voicePeerConnection = null;
-    let _voiceLocalStream = null;
-    let _voiceSignalChannel = null;
-    let _voiceCallStartTime = null;
-    let _voiceCallTimerInterval = null;
-    // [FIX-INSTANT-CALL-RING] تتبّع الطلبات الصوتية اللي عندها استماع فعّال بالفعل، لتفادي تكرار
-    // الاشتراك بنفس القناة أكثر من مرة، بما إن الاستماع الآن يبدأ فوراً لكل الطلبات الجديدة
-    const _watchedVoiceOrders = new Set();
-    async function _answerCustomerCall(offer) {
-        try {
-            document.getElementById('voice-call-status').innerText = 'جاري طلب إذن الميكروفون...';
-            _voiceLocalStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        } catch(e) {
-            showToast('⚠️ يرجى السماح باستخدام الميكروفون للرد على المكالمة');
-            return;
-        }
-
-        document.getElementById('voice-call-btn').style.display = 'none';
-        document.getElementById('voice-end-btn').style.display = 'block';
-        document.getElementById('voice-call-status').innerText = 'جاري الاتصال...';
-
-        _voicePeerConnection = new RTCPeerConnection({
-            iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }]
-        });
-        _voiceLocalStream.getTracks().forEach(track => _voicePeerConnection.addTrack(track, _voiceLocalStream));
-
-        _voicePeerConnection.ontrack = (event) => {
-            const audioEl = document.getElementById('voice-remote-audio');
-            audioEl.srcObject = event.streams[0];
-            document.getElementById('voice-call-status').innerText = '🟢 المكالمة جارية';
-            document.getElementById('voice-call-timer').style.display = 'block';
-            _voiceCallStartTime = Date.now();
-            _voiceCallTimerInterval = setInterval(() => {
-                const sec = Math.floor((Date.now() - _voiceCallStartTime) / 1000);
-                document.getElementById('voice-call-timer').innerText = String(Math.floor(sec/60)).padStart(2,'0') + ':' + String(sec%60).padStart(2,'0');
-            }, 1000);
-            // [FEATURE-CALL-RECORDING] بدء التسجيل الفعلي فور اتصال الصوت (يدمج صوت الطرفين معاً)
-            _startCallRecording(event.streams[0]);
-        };
-        _voicePeerConnection.onicecandidate = (event) => {
-            if (event.candidate) _voiceSignalChannel.send({ type: 'broadcast', event: 'ice-candidate', payload: { candidate: event.candidate, from: 'pharmacy' } });
-        };
-
-        await _voicePeerConnection.setRemoteDescription(new RTCSessionDescription(offer));
-        const answer = await _voicePeerConnection.createAnswer();
-        await _voicePeerConnection.setLocalDescription(answer);
-        _voiceSignalChannel.send({ type: 'broadcast', event: 'answer', payload: { answer, from: 'pharmacy' } });
-    }
-
-    // [FEATURE-CALL-RECORDING] تسجيل صوتي فعلي للمكالمة — يدمج صوت الطرفين معاً عبر AudioContext،
-    // ويُرفَع تلقائياً لتخزين Supabase عند انتهاء المكالمة، ليتاح للإدارة الاستماع له لاحقاً
-    let _recorderAudioCtx = null;
-    let _mediaRecorder = null;
-    let _recordedChunks = [];
-    function _startCallRecording(remoteStream) {
-        try {
-            _recorderAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            const dest = _recorderAudioCtx.createMediaStreamDestination();
-            if (_voiceLocalStream) _recorderAudioCtx.createMediaStreamSource(_voiceLocalStream).connect(dest);
-            _recorderAudioCtx.createMediaStreamSource(remoteStream).connect(dest);
-            _recordedChunks = [];
-            _mediaRecorder = new MediaRecorder(dest.stream);
-            _mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) _recordedChunks.push(e.data); };
-            _mediaRecorder.start();
-        } catch(e) { console.error('[FEATURE-CALL-RECORDING] تعذّر بدء التسجيل:', e); }
-    }
-
-    async function _stopAndUploadRecording(orderId) {
-        if (!_mediaRecorder || _mediaRecorder.state === 'inactive') return;
-        return new Promise((resolve) => {
-            _mediaRecorder.onstop = async () => {
-                try {
-                    const blob = new Blob(_recordedChunks, { type: 'audio/webm' });
-                    const fileName = `consult-${orderId}-${Date.now()}.webm`;
-                    const { error: upErr } = await _sb.storage.from('call-recordings').upload(fileName, blob, { contentType: 'audio/webm' });
-                    if (!upErr) {
-                        const { data: pub } = _sb.storage.from('call-recordings').getPublicUrl(fileName);
-                        await _sb.from('sh_public_orders').update({ call_recording_url: pub.publicUrl }).eq('id', orderId);
-                    } else {
-                        console.error('[FEATURE-CALL-RECORDING] فشل رفع التسجيل:', upErr);
-                    }
-                } catch(e) { console.error('[FEATURE-CALL-RECORDING] خطأ أثناء الرفع:', e); }
-                if (_recorderAudioCtx) { try { _recorderAudioCtx.close(); } catch(e){} _recorderAudioCtx = null; }
-                resolve();
-            };
-            _mediaRecorder.stop();
-        });
-    }
-
-    async function endVoiceCall() {
-        if (_voiceCallTimerInterval) { clearInterval(_voiceCallTimerInterval); _voiceCallTimerInterval = null; }
-        // [FEATURE-CALL-RECORDING] إيقاف التسجيل ورفعه قبل أي شيء آخر
-        if (activeOrderId) await _stopAndUploadRecording(activeOrderId);
-        // [FEATURE-CONSULT-LOG] حفظ مدة المكالمة بسجل الطلب — جزء من متطلبات تسجيل الاستشارات
-        if (_voiceCallStartTime && activeOrderId) {
-            const durationSec = Math.floor((Date.now() - _voiceCallStartTime) / 1000);
-            try { await _sb.from('sh_public_orders').update({ call_duration_seconds: durationSec }).eq('id', activeOrderId); } catch(e) {}
-        }
-        if (_voicePeerConnection) { _voicePeerConnection.close(); _voicePeerConnection = null; }
-        if (_voiceLocalStream) { _voiceLocalStream.getTracks().forEach(t => t.stop()); _voiceLocalStream = null; }
-        document.getElementById('voice-call-btn').style.display = 'none';
-        document.getElementById('voice-end-btn').style.display = 'none';
-        document.getElementById('voice-call-timer').style.display = 'none';
-        document.getElementById('voice-call-status').innerText = '✅ انتهت المكالمة';
-        showToast('✅ تم إنهاء المكالمة');
-        _voiceCallStartTime = null;
-    }
-
-    let _medItemCounter = 0;
-    function showDetailsBox() {
-        document.getElementById('med-items-list').innerHTML = '';
-        document.getElementById('consult-general-notes').value = '';
-        document.getElementById('live-total-price').innerText = '0';
-        _medItemCounter = 0;
-        addMedItemRow();
-        document.getElementById('order-details-modal').style.display = 'flex';
-    }
-
-    // [FEATURE-MED-SUGGEST] إضافة صف دواء منظّم (اسم + سعر + كمية + ملاحظة) بدل نص حر واحد
-    function addMedItemRow() {
-        const id = 'med-row-' + (_medItemCounter++);
-        const wrap = document.createElement('div');
-        wrap.id = id;
-        wrap.style.cssText = 'background:rgba(255,255,255,0.04); border-radius:10px; padding:10px; margin-bottom:8px; position:relative;';
-        wrap.innerHTML = `
-            <button onclick="document.getElementById('${id}').remove(); calculateTotal();" style="position:absolute; top:6px; left:6px; background:none; border:none; color:var(--danger); font-size:14px; cursor:pointer;"><i class="fas fa-times-circle"></i></button>
-            <input type="text" class="med-name" placeholder="اسم الدواء أو المنتج" style="margin-bottom:6px;">
-            <div style="display:flex; gap:6px; margin-bottom:6px;">
-                <input type="number" class="med-price" placeholder="السعر" oninput="calculateTotal()" style="flex:1;">
-                <input type="number" class="med-qty" placeholder="الكمية" value="1" oninput="calculateTotal()" style="flex:1;">
-            </div>
-            <input type="text" class="med-note" placeholder="ملاحظة (اختياري): قبل الأكل، مرتين يومياً...">`;
-        document.getElementById('med-items-list').appendChild(wrap);
-    }
-
-    function _collectMedItems() {
-        const rows = document.querySelectorAll('#med-items-list > div');
-        const items = [];
-        rows.forEach(row => {
-            const name = row.querySelector('.med-name').value.trim();
-            const price = parseFloat(row.querySelector('.med-price').value) || 0;
-            const qty = parseInt(row.querySelector('.med-qty').value) || 1;
-            const note = row.querySelector('.med-note').value.trim();
-            if (name) items.push({ name, price, quantity: qty, note });
-        });
-        return items;
-    }
-
-    function calculateTotal() {
-        const items = _collectMedItems();
-        const total = items.reduce((s, i) => s + (i.price * i.quantity), 0);
-        document.getElementById('live-total-price').innerText = total.toLocaleString();
-        return total;
-    }
-
-    async function completeConsultation() {
-        const items = _collectMedItems();
-        const totalPrice = calculateTotal();
-        const generalNotes = document.getElementById('consult-general-notes').value.trim();
-        if (items.length === 0) { alert("يرجى إضافة دواء واحد على الأقل بالاسم والسعر"); return; }
-
-        const targetId = activeOrderId;
-        // ملخّص نصّي (للتوافق مع أي عرض قديم يعتمد على order_details كنص) — لا يغيّر منطق الطلب
-        const finalInvoice = `🧾 الأدوية المقترحة:\n------------------\n` +
-            items.map(i => `${i.name} × ${i.quantity} — ${i.price.toLocaleString()} ل.س${i.note ? ' (' + i.note + ')' : ''}`).join('\n') +
-            `\n------------------\n💰 الإجمالي: ${totalPrice.toLocaleString()} ل.س` +
-            (generalNotes ? `\n📝 ملاحظات: ${generalNotes}` : '');
-
-        // [FEATURE-MED-SUGGEST] suggested_medications: قائمة منظّمة يقرأها تطبيق العميل لعرض
-        // خيار "طلب" أو "عدم طلب" لكل الأدوية دفعة واحدة — نفس قيم status بالضبط كالسابق
-        const { error } = await _sb.from('sh_public_orders').update({
-            status: 'completed_consultation',
-            order_details: finalInvoice,
-            order_price: totalPrice,
-            suggested_medications: JSON.stringify(items),
-            consultation_notes: generalNotes || null
-        }).eq('id', targetId);
-
-        if(!error) {
-            currentActiveOrders = currentActiveOrders.filter(o => o.id !== targetId);
-            renderOrders(currentActiveOrders);
-            document.getElementById('order-details-modal').style.display = 'none';
-            showToast("تم الحفظ بنجاح وإرسال الاقتراح للعميل ✅");
-            closeChat();
-        } else {
-            alert("خطأ: " + error.message);
-        }
-    }
-
-    async function cancelDueToNoResponse() {
-        if (!activeOrderId) return;
-        if (!confirm("هل أنت متأكد من إلغاء الاستشارة بسبب عدم رد العميل؟")) return;
-        const targetId = activeOrderId;
-        const { error } = await _sb.from('sh_public_orders').update({ status: 'cancelled', order_details: 'تم الإلغاء لعدم رد العميل' }).eq('id', targetId);
-        if (!error) {
-            showToast("تم إلغاء الاستشارة ⏳");
-            closeChat();
-        } else {
-            alert("خطأ أثناء الإلغاء: " + error.message);
-        }
-    }
-
-    function closeChat() {
-        // [FEATURE-VOICE-CONSULT] إنهاء أي مكالمة نشطة عند إغلاق شاشة الاستشارة
-        if (_voicePeerConnection || _voiceLocalStream) { endVoiceCall(); }
-        // [FIX-INSTANT-CALL-RING] لا نحذف قناة الاستماع هنا — يجب أن تبقى فعّالة عالمياً حتى لو
-        // أغلق الصيدلي شاشة الاستشارة، لضمان استمرار استقبال مكالمات لاحقة لنفس الطلب
-        if (statusChannel) _sb.removeChannel(statusChannel);
-        document.getElementById('active-chat-box').style.display = 'none';
-        activeOrderId = null;
-        loadOrders(); loadHistory();
-    }
-
-    function openReportModal(period) {
-        const _today = new Date(); _today.setHours(0,0,0,0);
-        const _weekAgo = new Date(); _weekAgo.setDate(_weekAgo.getDate() - 7);
-        const _monthAgo = new Date(); _monthAgo.setDate(_monthAgo.getDate() - 30);
-        // [FIX-REPORT-1] تصفية السجلات حسب الفترة المطلوبة فعلاً (كان يعرض الكل دائماً)
-        let _filteredOrders = historyOrders;
-        let _reportTitle = 'الأرشيف الكامل';
-        if (period === 'day')   { _filteredOrders = historyOrders.filter(o => new Date(o.created_at) >= _today);   _reportTitle = 'تقرير اليوم'; }
-        else if (period === 'week')  { _filteredOrders = historyOrders.filter(o => new Date(o.created_at) >= _weekAgo);  _reportTitle = 'تقرير الأسبوع'; }
-        else if (period === 'month') { _filteredOrders = historyOrders.filter(o => new Date(o.created_at) >= _monthAgo); _reportTitle = 'تقرير الشهر'; }
-        document.getElementById('report-title').innerText = _reportTitle;
-        const container = document.getElementById('report-items-container');
-        // [FIX-XSS-2] تشفير بيانات العملاء قبل إدراجها في innerHTML
-        container.innerHTML = _filteredOrders.map(o => `
-            <div class="report-item" style="background: rgba(255,255,255,0.05); border-radius: 10px; padding: 10px; margin-bottom: 10px; border-right: 3px solid var(--gold);">
-                <b>${escHtml(o.customer_name || '---')}</b><br>
-                <small>#${escHtml(String(o.id))} | ${escHtml(new Date(o.created_at).toLocaleString('ar-SY'))}</small>
-                <div style="font-size:10px; color:var(--gold); white-space:pre-line; margin-top:5px;">${escHtml(o.order_details || '')}</div>
-            </div>
-        `).join('') || '<p style="text-align:center;">لا توجد بيانات</p>';
-        document.getElementById('report-modal').style.display = 'flex';
-    }
-    function closeReportModal() { document.getElementById('report-modal').style.display = 'none'; }
-    function showToast(m) { const t = document.getElementById('toast'); t.innerText = m; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 3000); }
-    function logout() {
-        // [FIX-LOGOUT] إيقاف المؤقت الرئيسي عند تسجيل الخروج لمنع استمرار الـ polling
-        if (_mainRefreshInterval) { clearInterval(_mainRefreshInterval); _mainRefreshInterval = null; }
-        if (_msgPollInterval) { clearInterval(_msgPollInterval); _msgPollInterval = null; }
-        localStorage.removeItem('sh_ph_session');
-        location.reload();
-    }
-
-    // [SEC-FIX-PHARMACY-SELF-UPDATE] تحديث بيانات الصيدلية عبر دالة آمنة (نفس نمط المطاعم) —
-    // تعيد التحقق من access_code قبل أي تعديل، بدل الاعتماد على مصادقة حقيقية غير متوفرة بعد
-    async function _pharmacySecureUpdate(updates) {
-        if (!currentRes || !currentRes.id || !currentRes.access_code) {
-            return { error: { message: 'جلسة غير صالحة — يرجى تسجيل الدخول من جديد' } };
-        }
-        const { data: ok, error } = await _sb.rpc('pharmacy_self_update', {
-            p_pharmacy_id: currentRes.id,
-            p_access_code: String(currentRes.access_code),
-            p_updates: updates
-        });
-        if (error) return { error };
-        if (!ok) return { error: { message: 'تعذّر التحقق من الجلسة' } };
-        return { error: null };
-    }
-
-    // ===== [FEATURE-TABS] التبديل بين الاستشارات والمنتجات =====
-    // ===== [FEATURE-SHIFT] المناوبة: بداية/نهاية + تفعيل استقبال الطلبات =====
-    // ===== [FEATURE-SIDE-MENU] فتح/إغلاق القائمة الجانبية الموحّدة =====
-    function openSideMenu() {
-        document.getElementById('side-menu-name').innerText = (currentRes && currentRes.name) || 'الصيدلية';
-        document.getElementById('side-menu-overlay').style.display = 'block';
-    }
-    function closeSideMenu() {
-        document.getElementById('side-menu-overlay').style.display = 'none';
-    }
-
-    let _currentShiftLogId = null;
-
-    async function openShiftModal() {
-        const active = localStorage.getItem('sh_ph_shift_active') === '1';
-        const startedAt = localStorage.getItem('sh_ph_shift_started_at');
-        document.getElementById('shift-status-display').innerHTML = active
-            ? `<span style="color:var(--success);"><i class="fas fa-circle" style="font-size:8px;"></i> المناوبة فعّالة الآن</span><br><small style="opacity:0.7;">بدأت: ${startedAt ? new Date(startedAt).toLocaleString('ar-SY') : ''}</small>`
-            : `<span style="color:#888;"><i class="fas fa-circle" style="font-size:8px;"></i> المناوبة متوقفة — لا تستقبل استشارات جديدة</span>`;
-        document.getElementById('shift-toggle-btn').innerText = active ? 'إنهاء المناوبة' : 'بدء المناوبة';
-        document.getElementById('shift-toggle-btn').style.background = active ? 'var(--danger)' : 'var(--gold)';
-        document.getElementById('shift-modal').style.display = 'flex';
-        loadShiftHistory();
-        loadScheduledShifts();
-    }
-
-    // [FEATURE-SHIFT-LOG] تسجيل كل مناوبة بسجل حقيقي (تاريخ، وقت فتح، وقت إغلاق) بدل تبديل حالة بسيط
-    async function toggleShift() {
-        const active = localStorage.getItem('sh_ph_shift_active') === '1';
-        const newState = !active;
-        const nowIso = new Date().toISOString();
-
-        if (newState) {
-            // بدء مناوبة جديدة — إنشاء سجل جديد بتاريخ ووقت الفتح
-            const { data, error } = await _sb.from('pharmacy_shift_logs').insert([{ pharmacy_id: currentRes.id, opened_at: nowIso }]).select().single();
-            if (error) { showToast('⚠️ تعذّر بدء المناوبة: ' + error.message); return; }
-            _currentShiftLogId = data.id;
-            localStorage.setItem('sh_ph_current_shift_log_id', String(data.id));
-            localStorage.setItem('sh_ph_shift_started_at', nowIso);
-        } else {
-            // إنهاء المناوبة الحالية — تسجيل وقت الإغلاق على نفس السجل
-            const logId = _currentShiftLogId || localStorage.getItem('sh_ph_current_shift_log_id');
-            if (logId) {
-                const { error } = await _sb.from('pharmacy_shift_logs').update({ closed_at: nowIso }).eq('id', logId);
-                if (error) console.error('[FEATURE-SHIFT-LOG] تعذّر تسجيل وقت إغلاق المناوبة:', error);
+        function deletePayment(id) {
+            if (confirm("هل أنت متأكد من حذف هذه الدفعة؟")) {
+                db.payments = db.payments.filter(item => item.id != id);
+                saveData();
             }
-            _currentShiftLogId = null;
-            localStorage.removeItem('sh_ph_current_shift_log_id');
         }
 
-        localStorage.setItem('sh_ph_shift_active', newState ? '1' : '0');
-        document.getElementById('shift-active-dot').style.display = newState ? 'block' : 'none';
-        // تفعيل/إيقاف استقبال الطلبات فعلياً على مستوى القاعدة
-        const { error } = await _pharmacySecureUpdate({ is_open: newState, shift_started_at: newState ? nowIso : null });
-        if (error) { showToast('⚠️ تعذّر تحديث حالة المناوبة: ' + error.message); return; }
-        currentRes.is_open = newState;
-        showToast(newState ? '✅ بدأت المناوبة — تستقبل استشارات الآن' : '⏸️ انتهت المناوبة — توقف استقبال الاستشارات');
-        openShiftModal();
-    }
+        function saveSettings(e) {
+            e.preventDefault();
+            db.person = document.getElementById('set-person').value;
+            db.target = document.getElementById('set-target').value;
+            db.profit = document.getElementById('set-profit').value;
+            saveData();
+            closeSettings();
+        }
 
-    // [FEATURE-SHIFT-LOG] عرض سجل المناوبات السابقة: التاريخ، وقت الفتح، وقت الإغلاق، المدة
-    // [FEATURE-SCHEDULE-FUTURE-SHIFT] جدولة مناوبة مستقبلية بتاريخ ووقت محدَّدين — تُخزَّن بنفس
-    // جدول pharma_oncall (نفس الجدول اللي تعرضه شارة "🌙 مناوبة" لتطبيق العميل)، فتظهر تلقائياً
-    // بتطبيق العميل بالوقت المحدَّد دون أي خطوة إضافية
-    async function scheduleFutureShift() {
-        const date = document.getElementById('sched-shift-date').value;
-        const start = document.getElementById('sched-shift-start').value;
-        const end = document.getElementById('sched-shift-end').value;
-        if (!date || !start || !end) { showToast('⚠️ يرجى تعبئة التاريخ والوقتين'); return; }
-        const dayNames = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
-        const dayName = dayNames[new Date(date).getDay()];
-        const { error } = await _sb.from('pharma_oncall').insert([{
-            pharmacy_id: currentRes.id,
-            pharmacy_name: currentRes.name,
-            days: [dayName],
-            start_time: start,
-            end_time: end,
-            specific_date: date,
-            is_active: true,
-            created_at: new Date().toISOString()
-        }]);
-        if (error) { showToast('⚠️ تعذّر الجدولة: ' + error.message); return; }
-        showToast('✅ تمت جدولة المناوبة بنجاح');
-        document.getElementById('sched-shift-date').value = '';
-        document.getElementById('sched-shift-start').value = '';
-        document.getElementById('sched-shift-end').value = '';
-        loadScheduledShifts();
-    }
-
-    async function loadScheduledShifts() {
-        const list = document.getElementById('scheduled-shifts-list');
-        if (!currentRes) return;
-        const todayIso = new Date().toISOString().split('T')[0];
-        const { data, error } = await _sb.from('pharma_oncall').select('*').eq('pharmacy_id', currentRes.id).eq('is_active', true).gte('specific_date', todayIso).order('specific_date', { ascending: true });
-        if (error || !data || data.length === 0) { list.innerHTML = `<div style="text-align:center; font-size:11px; color:#888; padding:10px;">لا توجد مناوبات مجدولة قادمة</div>`; return; }
-        list.innerHTML = data.map(s => `
-            <div style="background:var(--glass); border-radius:10px; padding:10px; margin-bottom:6px; font-size:11px; display:flex; justify-content:space-between; align-items:center;">
-                <div>
-                    <b>${s.specific_date}</b> <span style="color:#888;">(${(s.days||[])[0]||''})</span>
-                    <div style="color:#ccc; margin-top:2px;"><i class="fas fa-clock"></i> ${s.start_time} — ${s.end_time}</div>
-                </div>
-                <button onclick="deleteScheduledShift('${s.id}')" style="background:rgba(231,76,60,0.15); color:var(--danger); border:1px solid var(--danger); border-radius:6px; padding:5px 8px; font-size:10px; cursor:pointer;"><i class="fas fa-trash"></i></button>
-            </div>`).join('');
-    }
-
-    async function deleteScheduledShift(id) {
-        if (!confirm('حذف هذه المناوبة المجدولة؟')) return;
-        const { error } = await _sb.from('pharma_oncall').delete().eq('id', id);
-        if (error) { showToast('⚠️ تعذّر الحذف'); return; }
-        showToast('✅ تم الحذف');
-        loadScheduledShifts();
-    }
-
-    async function loadShiftHistory() {
-        const list = document.getElementById('shift-history-list');
-        if (!currentRes) return;
-        const { data, error } = await _sb.from('pharmacy_shift_logs').select('*').eq('pharmacy_id', currentRes.id).order('opened_at', { ascending: false }).limit(15);
-        if (error || !data || data.length === 0) { list.innerHTML = `<div style="text-align:center; font-size:11px; color:#888; padding:10px;">لا توجد مناوبات مسجَّلة بعد</div>`; return; }
-        list.innerHTML = data.map(s => {
-            const opened = new Date(s.opened_at);
-            const closed = s.closed_at ? new Date(s.closed_at) : null;
-            const durationTxt = closed ? Math.round((closed - opened) / 60000) + ' دقيقة' : 'جارية الآن';
-            return `<div style="background:var(--glass); border-radius:10px; padding:10px; margin-bottom:6px; font-size:11px;">
-                <div style="display:flex; justify-content:space-between;"><b>${opened.toLocaleDateString('ar-SY')}</b><span style="color:${closed ? '#888' : 'var(--success)'};">${durationTxt}</span></div>
-                <div style="color:#ccc; margin-top:4px;"><i class="fas fa-play" style="color:var(--success); font-size:9px;"></i> فتح: ${opened.toLocaleTimeString('ar-SY',{hour:'2-digit',minute:'2-digit'})}
-                ${closed ? ` &nbsp; <i class="fas fa-stop" style="color:var(--danger); font-size:9px;"></i> إغلاق: ${closed.toLocaleTimeString('ar-SY',{hour:'2-digit',minute:'2-digit'})}` : ''}</div>
-            </div>`;
-        }).join('');
-    }
-
-    // ===== [FEATURE-LOCATION] تحديد موقع الصيدلية =====
-    function openLocationModal() {
-        document.getElementById('location-status-text').innerText = (currentRes && currentRes.pickup_lat && currentRes.pickup_lng)
-            ? '📍 الموقع الحالي محفوظ: ' + parseFloat(currentRes.pickup_lat).toFixed(5) + ', ' + parseFloat(currentRes.pickup_lng).toFixed(5)
-            : '⚠️ لا يوجد موقع محفوظ بعد';
-        document.getElementById('location-modal').style.display = 'flex';
-    }
-    function useCurrentLocationForPharmacy() {
-        if (!navigator.geolocation) { showToast('⚠️ المتصفح لا يدعم تحديد الموقع'); return; }
-        document.getElementById('location-status-text').innerText = '⏳ جاري تحديد موقعك...';
-        navigator.geolocation.getCurrentPosition(async (pos) => {
-            const lat = pos.coords.latitude, lng = pos.coords.longitude;
-            const { error } = await _pharmacySecureUpdate({ pickup_lat: lat, pickup_lng: lng });
-            if (error) { showToast('⚠️ تعذّر حفظ الموقع: ' + error.message); return; }
-            currentRes.pickup_lat = lat; currentRes.pickup_lng = lng;
-            document.getElementById('location-status-text').innerText = '✅ تم تحديث الموقع: ' + lat.toFixed(5) + ', ' + lng.toFixed(5);
-            showToast('✅ تم حفظ موقع الصيدلية بنجاح');
-        }, () => {
-            document.getElementById('location-status-text').innerText = '⚠️ تعذّر الوصول لموقعك — تأكد من السماح بالإذن';
-        }, { enableHighAccuracy: true, timeout: 10000 });
-    }
-
-    // ===== [FEATURE-PHARMACY-INFO] بيانات الصيدلية =====
-    function openPharmacyInfoModal() {
-        document.getElementById('ph-info-name').value = currentRes.name || '';
-        document.getElementById('ph-info-manager').value = currentRes.manager_name || '';
-        document.getElementById('ph-info-open').value = currentRes.open_time || '';
-        document.getElementById('ph-info-close').value = currentRes.close_time || '';
-        document.getElementById('pharmacy-info-modal').style.display = 'flex';
-    }
-    async function savePharmacyInfo() {
-        const updates = {
-            name: document.getElementById('ph-info-name').value.trim(),
-            manager_name: document.getElementById('ph-info-manager').value.trim(),
-            open_time: document.getElementById('ph-info-open').value.trim(),
-            close_time: document.getElementById('ph-info-close').value.trim()
-        };
-        if (!updates.name) { showToast('⚠️ اسم الصيدلية مطلوب'); return; }
-        const { error } = await _pharmacySecureUpdate(updates);
-        if (error) { showToast('⚠️ تعذّر الحفظ: ' + error.message); return; }
-        Object.assign(currentRes, updates);
-        document.getElementById('display-res-name').innerText = updates.name;
-        localStorage.setItem('sh_ph_session', JSON.stringify({ id: currentRes.id, name: currentRes.name, access_code: currentRes.access_code, _ts: Date.now() }));
-        showToast('✅ تم حفظ بيانات الصيدلية');
-        document.getElementById('pharmacy-info-modal').style.display = 'none';
-    }
-
-    // ===== [FEATURE-PRODUCTS] إدارة المنتجات غير الدوائية =====
-    window.onload = () => {
-        // [SEC-PATCH-25] startApp نفسها ستتحقق من انتهاء الصلاحية
-        if (localStorage.getItem('sh_ph_session')) startApp();
-    };
-</script>
+        // التشغيل الأولي وضمان الاسترجاع الفوري
+        window.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            render();
+        });
+    </script>
 </body>
 </html>
